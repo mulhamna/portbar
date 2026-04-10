@@ -1,0 +1,384 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA000030000000000000AABB /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000020000000000000AABB /* main.swift */; };
+		AA000031000000000000AABB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000021000000000000AABB /* AppDelegate.swift */; };
+		AA000032000000000000AABB /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000022000000000000AABB /* StatusBarController.swift */; };
+		AA000033000000000000AABB /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000023000000000000AABB /* Models.swift */; };
+		AA000034000000000000AABB /* ShellRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000024000000000000AABB /* ShellRunner.swift */; };
+		AA000035000000000000AABB /* PortScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000025000000000000AABB /* PortScanner.swift */; };
+		AA000036000000000000AABB /* FrameworkDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000026000000000000AABB /* FrameworkDetector.swift */; };
+		AA000037000000000000AABB /* ProcessKiller.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000027000000000000AABB /* ProcessKiller.swift */; };
+		AA000038000000000000AABB /* WatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000028000000000000AABB /* WatchService.swift */; };
+		AA000039000000000000AABB /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000029000000000000AABB /* MenuBuilder.swift */; };
+		AA00003A000000000000AABB /* PortRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002A000000000000AABB /* PortRowView.swift */; };
+		AA00003B000000000000AABB /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002B000000000000AABB /* AboutView.swift */; };
+		AA00003C000000000000AABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00002C000000000000AABB /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AA000020000000000000AABB /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		AA000021000000000000AABB /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		AA000022000000000000AABB /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		AA000023000000000000AABB /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		AA000024000000000000AABB /* ShellRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellRunner.swift; sourceTree = "<group>"; };
+		AA000025000000000000AABB /* PortScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortScanner.swift; sourceTree = "<group>"; };
+		AA000026000000000000AABB /* FrameworkDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameworkDetector.swift; sourceTree = "<group>"; };
+		AA000027000000000000AABB /* ProcessKiller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessKiller.swift; sourceTree = "<group>"; };
+		AA000028000000000000AABB /* WatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchService.swift; sourceTree = "<group>"; };
+		AA000029000000000000AABB /* MenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBuilder.swift; sourceTree = "<group>"; };
+		AA00002A000000000000AABB /* PortRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortRowView.swift; sourceTree = "<group>"; };
+		AA00002B000000000000AABB /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		AA00002C000000000000AABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA00002D000000000000AABB /* PortBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PortBar.entitlements; sourceTree = "<group>"; };
+		AA00002E000000000000AABB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA00002F000000000000AABB /* PortBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PortBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA00000B000000000000AABB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA000010000000000000AABB = {
+			isa = PBXGroup;
+			children = (
+				AA000011000000000000AABB /* PortBar */,
+				AA000016000000000000AABB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA000011000000000000AABB /* PortBar */ = {
+			isa = PBXGroup;
+			children = (
+				AA000012000000000000AABB /* App */,
+				AA000013000000000000AABB /* Core */,
+				AA000014000000000000AABB /* UI */,
+				AA000015000000000000AABB /* Resources */,
+			);
+			path = PortBar;
+			sourceTree = "<group>";
+		};
+		AA000012000000000000AABB /* App */ = {
+			isa = PBXGroup;
+			children = (
+				AA000020000000000000AABB /* main.swift */,
+				AA000021000000000000AABB /* AppDelegate.swift */,
+				AA000022000000000000AABB /* StatusBarController.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		AA000013000000000000AABB /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				AA000023000000000000AABB /* Models.swift */,
+				AA000024000000000000AABB /* ShellRunner.swift */,
+				AA000025000000000000AABB /* PortScanner.swift */,
+				AA000026000000000000AABB /* FrameworkDetector.swift */,
+				AA000027000000000000AABB /* ProcessKiller.swift */,
+				AA000028000000000000AABB /* WatchService.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		AA000014000000000000AABB /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				AA000029000000000000AABB /* MenuBuilder.swift */,
+				AA00002A000000000000AABB /* PortRowView.swift */,
+				AA00002B000000000000AABB /* AboutView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		AA000015000000000000AABB /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AA00002C000000000000AABB /* Assets.xcassets */,
+				AA00002D000000000000AABB /* PortBar.entitlements */,
+				AA00002E000000000000AABB /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		AA000016000000000000AABB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA00002F000000000000AABB /* PortBar.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA000002000000000000AABB /* PortBar */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA000004000000000000AABB /* Build configuration list for PBXNativeTarget "PortBar" */;
+			buildPhases = (
+				AA000009000000000000AABB /* Sources */,
+				AA00000A000000000000AABB /* Resources */,
+				AA00000B000000000000AABB /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PortBar;
+			productName = PortBar;
+			productReference = AA00002F000000000000AABB /* PortBar.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA000001000000000000AABB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					AA000002000000000000AABB = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = AA000003000000000000AABB /* Build configuration list for PBXProject "PortBar" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA000010000000000000AABB;
+			productRefGroup = AA000016000000000000AABB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA000002000000000000AABB /* PortBar */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA00000A000000000000AABB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00003C000000000000AABB /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA000009000000000000AABB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000030000000000000AABB /* main.swift in Sources */,
+				AA000031000000000000AABB /* AppDelegate.swift in Sources */,
+				AA000032000000000000AABB /* StatusBarController.swift in Sources */,
+				AA000033000000000000AABB /* Models.swift in Sources */,
+				AA000034000000000000AABB /* ShellRunner.swift in Sources */,
+				AA000035000000000000AABB /* PortScanner.swift in Sources */,
+				AA000036000000000000AABB /* FrameworkDetector.swift in Sources */,
+				AA000037000000000000AABB /* ProcessKiller.swift in Sources */,
+				AA000038000000000000AABB /* WatchService.swift in Sources */,
+				AA000039000000000000AABB /* MenuBuilder.swift in Sources */,
+				AA00003A000000000000AABB /* PortRowView.swift in Sources */,
+				AA00003B000000000000AABB /* AboutView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AA000005000000000000AABB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLE = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA000006000000000000AABB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLE = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		AA000007000000000000AABB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PortBar/Resources/PortBar.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = PortBar/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.portbar.PortBar;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		AA000008000000000000AABB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PortBar/Resources/PortBar.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = PortBar/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.portbar.PortBar;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA000003000000000000AABB /* Build configuration list for PBXProject "PortBar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000005000000000000AABB /* Debug */,
+				AA000006000000000000AABB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA000004000000000000AABB /* Build configuration list for PBXNativeTarget "PortBar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000007000000000000AABB /* Debug */,
+				AA000008000000000000AABB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = AA000001000000000000AABB /* Project object */;
+}
