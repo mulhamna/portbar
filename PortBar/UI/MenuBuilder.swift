@@ -55,13 +55,48 @@ struct MenuBuilder {
     // MARK: - Port row
 
     private static func makePortItem(entry: PortEntry) -> NSMenuItem {
-        let uptime = formatUptime(entry.uptime)
-        let project = entry.projectName ?? ""
-        let health = healthLabel(entry.health)
-        let title = ":\(entry.port)  \(entry.framework.rawValue)  \(project)  \(uptime)  \(health)"
-        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        item.attributedTitle = buildPortTitle(entry: entry)
         item.submenu = makeSubmenu(entry: entry)
         return item
+    }
+
+    private static func buildPortTitle(entry: PortEntry) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+
+        // Colored health dot
+        let dot = NSAttributedString(string: "● ", attributes: [.foregroundColor: healthNSColor(entry.health)])
+        result.append(dot)
+
+        // Port (monospaced)
+        let portStr = NSAttributedString(
+            string: ":\(entry.port)",
+            attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .semibold)]
+        )
+        result.append(portStr)
+
+        // Label: framework name (or process name if unknown)
+        let label = frameworkLabel(entry)
+        result.append(NSAttributedString(string: "  \(label)"))
+
+        // Project name
+        if let project = entry.projectName, !project.isEmpty {
+            result.append(NSAttributedString(string: "  \(project)", attributes: [.foregroundColor: NSColor.secondaryLabelColor]))
+        }
+
+        // Uptime
+        let uptime = formatUptime(entry.uptime)
+        result.append(NSAttributedString(string: "  \(uptime)", attributes: [.foregroundColor: NSColor.tertiaryLabelColor]))
+
+        return result
+    }
+
+    private static func frameworkLabel(_ entry: PortEntry) -> String {
+        if entry.framework != .unknown {
+            return entry.framework.rawValue
+        }
+        // Fall back to project name, then process name
+        return entry.projectName ?? entry.processName
     }
 
     private static func makeSubmenu(entry: PortEntry) -> NSMenu {

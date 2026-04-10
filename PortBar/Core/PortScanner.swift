@@ -173,11 +173,12 @@ actor PortScanner {
 
     private func shouldSkip(processName: String, port: Int, framework: Framework) -> Bool {
         let systemProcesses: Set<String> = [
-            "Spotify", "Raycast", "UserEventAgent", "rapportd", "ControlCenter"
+            "Spotify", "Raycast", "UserEventAgent", "rapportd", "ControlCenter",
+            "mDNSResponder", "remoted", "sharingd", "AirPlayXPCHelper",
+            "ScreenSharingD", "CommCenter", "triald"
         ]
         if systemProcesses.contains(processName) { return true }
         if processName.hasPrefix("com.apple.") { return true }
-        if port > 49151 && framework == .unknown { return true }
         return false
     }
 
