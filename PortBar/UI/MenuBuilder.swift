@@ -138,11 +138,11 @@ struct MenuBuilder {
         return sub
     }
 
-    private static func healthLabel(_ health: HealthStatus) -> String {
+    private static func healthNSColor(_ health: HealthStatus) -> NSColor {
         switch health {
-        case .healthy: return "● healthy"
-        case .orphaned: return "◐ orphaned"
-        case .zombie: return "○ zombie"
+        case .healthy: return .systemGreen
+        case .orphaned: return .systemYellow
+        case .zombie: return .systemRed
         }
     }
 
