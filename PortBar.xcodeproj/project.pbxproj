@@ -16,6 +16,7 @@
 		AA000036000000000000AABB /* FrameworkDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000026000000000000AABB /* FrameworkDetector.swift */; };
 		AA000037000000000000AABB /* ProcessKiller.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000027000000000000AABB /* ProcessKiller.swift */; };
 		AA000038000000000000AABB /* WatchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000028000000000000AABB /* WatchService.swift */; };
+		AA000040000000000000AABB /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000041000000000000AABB /* Settings.swift */; };
 		AA000039000000000000AABB /* MenuBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000029000000000000AABB /* MenuBuilder.swift */; };
 		AA00003A000000000000AABB /* PortRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002A000000000000AABB /* PortRowView.swift */; };
 		AA00003B000000000000AABB /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002B000000000000AABB /* AboutView.swift */; };
@@ -32,6 +33,7 @@
 		AA000026000000000000AABB /* FrameworkDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameworkDetector.swift; sourceTree = "<group>"; };
 		AA000027000000000000AABB /* ProcessKiller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessKiller.swift; sourceTree = "<group>"; };
 		AA000028000000000000AABB /* WatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchService.swift; sourceTree = "<group>"; };
+		AA000041000000000000AABB /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		AA000029000000000000AABB /* MenuBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBuilder.swift; sourceTree = "<group>"; };
 		AA00002A000000000000AABB /* PortRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortRowView.swift; sourceTree = "<group>"; };
 		AA00002B000000000000AABB /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
@@ -90,6 +92,7 @@
 				AA000026000000000000AABB /* FrameworkDetector.swift */,
 				AA000027000000000000AABB /* ProcessKiller.swift */,
 				AA000028000000000000AABB /* WatchService.swift */,
+				AA000041000000000000AABB /* Settings.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -200,6 +203,7 @@
 				AA000036000000000000AABB /* FrameworkDetector.swift in Sources */,
 				AA000037000000000000AABB /* ProcessKiller.swift in Sources */,
 				AA000038000000000000AABB /* WatchService.swift in Sources */,
+				AA000040000000000000AABB /* Settings.swift in Sources */,
 				AA000039000000000000AABB /* MenuBuilder.swift in Sources */,
 				AA00003A000000000000AABB /* PortRowView.swift in Sources */,
 				AA00003B000000000000AABB /* AboutView.swift in Sources */,

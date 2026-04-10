@@ -31,6 +31,13 @@ class StatusBarController {
                 self?.rebuildMenu()
             }
             .store(in: &cancellables)
+
+        PortBarSettings.shared.$displayMode
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.rebuildMenu()
+            }
+            .store(in: &cancellables)
     }
 
     private func updateTitle(ports: [PortEntry]) {

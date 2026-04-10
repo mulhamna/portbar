@@ -62,8 +62,15 @@ struct MenuBuilder {
         if ports.isEmpty {
             menu.addItem(NSMenuItem(title: "No active ports", action: nil, keyEquivalent: ""))
         } else {
-            addPortSections(ports: ports, to: menu)
+            switch PortBarSettings.shared.displayMode {
+            case .grouped: addPortSections(ports: ports, to: menu)
+            case .flat:    addFlatList(ports: ports, to: menu)
+            }
         }
+
+        menu.addItem(.separator())
+
+        menu.addItem(makeSettingsItem())
 
         menu.addItem(.separator())
 
@@ -78,7 +85,45 @@ struct MenuBuilder {
         return menu
     }
 
-    // MARK: - Sections
+    // MARK: - Settings submenu
+
+    private static func makeSettingsItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Settings", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+
+        let header = NSMenuItem(title: "DISPLAY MODE", action: nil, keyEquivalent: "")
+        header.isEnabled = false
+        header.attributedTitle = NSAttributedString(
+            string: "DISPLAY MODE",
+            attributes: [
+                .foregroundColor: NSColor.secondaryLabelColor,
+                .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize, weight: .semibold)
+            ]
+        )
+        sub.addItem(header)
+
+        let current = PortBarSettings.shared.displayMode
+        for mode in PortBarSettings.DisplayMode.allCases {
+            let modeItem = NSMenuItem(title: mode.label, action: #selector(DisplayModeTarget.setMode(_:)), keyEquivalent: "")
+            modeItem.representedObject = mode.rawValue as AnyObject
+            modeItem.target = DisplayModeTarget.shared
+            modeItem.state = (mode == current) ? .on : .off
+            sub.addItem(modeItem)
+        }
+
+        item.submenu = sub
+        return item
+    }
+
+    // MARK: - Flat list
+
+    private static func addFlatList(ports: [PortEntry], to menu: NSMenu) {
+        for entry in ports {
+            menu.addItem(makePortItem(entry: entry))
+        }
+    }
+
+    // MARK: - Grouped sections
 
     private static func addPortSections(ports: [PortEntry], to menu: NSMenu) {
         // Group ports by category, preserving sort order within each group
@@ -231,6 +276,15 @@ struct MenuBuilder {
 }
 
 // MARK: - Action targets
+
+class DisplayModeTarget: NSObject {
+    static let shared = DisplayModeTarget()
+    @objc func setMode(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let mode = PortBarSettings.DisplayMode(rawValue: raw) else { return }
+        PortBarSettings.shared.displayMode = mode
+    }
+}
 
 class WatchToggleTarget: NSObject {
     static let shared = WatchToggleTarget()
