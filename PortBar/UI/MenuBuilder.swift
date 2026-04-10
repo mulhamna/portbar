@@ -115,11 +115,50 @@ struct MenuBuilder {
         return item
     }
 
-    // MARK: - Flat list
+    // MARK: - Flat scrollable list
 
     private static func addFlatList(ports: [PortEntry], to menu: NSMenu) {
-        for entry in ports {
-            menu.addItem(makePortItem(entry: entry))
+        let rowH   = PortScrollRowView.rowHeight
+        let maxRows = 15
+        let visible = min(ports.count, maxRows)
+        let viewH   = rowH * CGFloat(visible)
+        let width: CGFloat = 400
+
+        // Document view (flipped so rows are top-to-bottom)
+        let docH = rowH * CGFloat(ports.count)
+        let docView = FlippedView(frame: NSRect(x: 0, y: 0, width: width, height: docH))
+        for (i, entry) in ports.enumerated() {
+            let row = PortScrollRowView(
+                entry: entry,
+                frame: NSRect(x: 0, y: rowH * CGFloat(i), width: width, height: rowH)
+            )
+            docView.addSubview(row)
+        }
+
+        // Scroll view — fixed height shows max 15 rows, scrolls the rest
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: width, height: viewH))
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers  = false
+        scrollView.borderType          = .noBorder
+        scrollView.drawsBackground     = false
+        scrollView.documentView        = docView
+
+        let containerItem = NSMenuItem()
+        containerItem.view = scrollView
+        menu.addItem(containerItem)
+
+        // Port count hint below the scroll area
+        if ports.count > maxRows {
+            let hint = NSMenuItem(title: "\(ports.count) ports total — scroll to see all", action: nil, keyEquivalent: "")
+            hint.isEnabled = false
+            hint.attributedTitle = NSAttributedString(
+                string: "\(ports.count) ports total — scroll to see all",
+                attributes: [
+                    .foregroundColor: NSColor.tertiaryLabelColor,
+                    .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+                ]
+            )
+            menu.addItem(hint)
         }
     }
 
