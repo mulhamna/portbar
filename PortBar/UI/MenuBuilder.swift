@@ -118,14 +118,13 @@ struct MenuBuilder {
     // MARK: - Flat scrollable list
 
     private static func addFlatList(ports: [PortEntry], to menu: NSMenu) {
-        let rowH   = PortScrollRowView.rowHeight
+        let rowH    = PortScrollRowView.rowHeight
         let maxRows = 15
-        let visible = min(ports.count, maxRows)
-        let viewH   = rowH * CGFloat(visible)
-        let width: CGFloat = 400
+        let viewH   = rowH * CGFloat(min(ports.count, maxRows))
+        let width: CGFloat = 380
+        let docH    = rowH * CGFloat(ports.count)
 
-        // Document view (flipped so rows are top-to-bottom)
-        let docH = rowH * CGFloat(ports.count)
+        // FlippedView → y=0 is top, rows stack naturally top-to-bottom
         let docView = FlippedView(frame: NSRect(x: 0, y: 0, width: width, height: docH))
         for (i, entry) in ports.enumerated() {
             let row = PortScrollRowView(
@@ -135,24 +134,25 @@ struct MenuBuilder {
             docView.addSubview(row)
         }
 
-        // Scroll view — fixed height shows max 15 rows, scrolls the rest
-        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: width, height: viewH))
-        scrollView.hasVerticalScroller = true
-        scrollView.autohidesScrollers  = false
-        scrollView.borderType          = .noBorder
-        scrollView.drawsBackground     = false
-        scrollView.documentView        = docView
+        let scrollView = MenuEmbeddedScrollView(frame: NSRect(x: 0, y: 0, width: width, height: viewH))
+        scrollView.hasVerticalScroller   = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers    = false
+        scrollView.borderType            = .noBorder
+        scrollView.drawsBackground       = false
+        scrollView.documentView          = docView
+        // Start at top
+        scrollView.contentView.scroll(to: .zero)
 
         let containerItem = NSMenuItem()
         containerItem.view = scrollView
         menu.addItem(containerItem)
 
-        // Port count hint below the scroll area
         if ports.count > maxRows {
-            let hint = NSMenuItem(title: "\(ports.count) ports total — scroll to see all", action: nil, keyEquivalent: "")
+            let hint = NSMenuItem(title: "", action: nil, keyEquivalent: "")
             hint.isEnabled = false
             hint.attributedTitle = NSAttributedString(
-                string: "\(ports.count) ports total — scroll to see all",
+                string: "\(ports.count) ports — scroll to see all",
                 attributes: [
                     .foregroundColor: NSColor.tertiaryLabelColor,
                     .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
@@ -219,45 +219,17 @@ struct MenuBuilder {
     private static func makePortItem(entry: PortEntry) -> NSMenuItem {
         let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         item.attributedTitle = buildPortTitle(entry: entry)
-        item.submenu = makeSubmenu(entry: entry)
+        item.submenu = makePortSubmenu(entry: entry)
         return item
     }
 
-    private static func buildPortTitle(entry: PortEntry) -> NSAttributedString {
-        let result = NSMutableAttributedString()
-
-        // Colored health dot
-        let dot = NSAttributedString(string: "● ", attributes: [.foregroundColor: healthNSColor(entry.health)])
-        result.append(dot)
-
-        // Port (monospaced bold)
-        let portStr = NSAttributedString(
-            string: ":\(entry.port)",
-            attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .semibold)]
-        )
-        result.append(portStr)
-
-        // Framework or fallback label
-        let label = frameworkLabel(entry)
-        result.append(NSAttributedString(string: "  \(label)"))
-
-        // Project name
-        if let project = entry.projectName, !project.isEmpty {
-            result.append(NSAttributedString(string: "  \(project)", attributes: [.foregroundColor: NSColor.secondaryLabelColor]))
-        }
-
-        // Uptime
-        let uptime = formatUptime(entry.uptime)
-        result.append(NSAttributedString(string: "  \(uptime)", attributes: [.foregroundColor: NSColor.tertiaryLabelColor]))
-
-        return result
-    }
 
     private static func frameworkLabel(_ entry: PortEntry) -> String {
         entry.framework != .unknown ? entry.framework.rawValue : (entry.projectName ?? entry.processName)
     }
 
-    private static func makeSubmenu(entry: PortEntry) -> NSMenu {
+    // Internal so PortScrollRowView can reuse it
+    static func makePortSubmenu(entry: PortEntry) -> NSMenu {
         let sub = NSMenu()
 
         let killItem = NSMenuItem(title: "Kill Process (PID \(entry.pid))", action: #selector(KillTarget.kill(_:)), keyEquivalent: "")
@@ -294,6 +266,24 @@ struct MenuBuilder {
         sub.addItem(infoItem)
 
         return sub
+    }
+
+    // Shared title builder used by both grouped rows and scroll rows
+    static func buildPortTitle(entry: PortEntry) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+        let dot = NSAttributedString(string: "● ", attributes: [.foregroundColor: healthNSColor(entry.health)])
+        result.append(dot)
+        result.append(NSAttributedString(
+            string: ":\(entry.port)",
+            attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .semibold)]
+        ))
+        let label = frameworkLabel(entry)
+        result.append(NSAttributedString(string: "  \(label)"))
+        if let project = entry.projectName, !project.isEmpty {
+            result.append(NSAttributedString(string: "  \(project)", attributes: [.foregroundColor: NSColor.secondaryLabelColor]))
+        }
+        result.append(NSAttributedString(string: "  \(formatUptime(entry.uptime))", attributes: [.foregroundColor: NSColor.tertiaryLabelColor]))
+        return result
     }
 
     // MARK: - Helpers

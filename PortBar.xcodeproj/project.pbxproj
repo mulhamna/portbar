@@ -21,6 +21,7 @@
 		AA00003A000000000000AABB /* PortRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002A000000000000AABB /* PortRowView.swift */; };
 		AA00003B000000000000AABB /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002B000000000000AABB /* AboutView.swift */; };
 		AA000042000000000000AABB /* PortScrollRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000043000000000000AABB /* PortScrollRowView.swift */; };
+		AA000044000000000000AABB /* PortListPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000045000000000000AABB /* PortListPopoverView.swift */; };
 		AA00003C000000000000AABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00002C000000000000AABB /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -39,6 +40,7 @@
 		AA00002A000000000000AABB /* PortRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortRowView.swift; sourceTree = "<group>"; };
 		AA00002B000000000000AABB /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		AA000043000000000000AABB /* PortScrollRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortScrollRowView.swift; sourceTree = "<group>"; };
+		AA000045000000000000AABB /* PortListPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortListPopoverView.swift; sourceTree = "<group>"; };
 		AA00002C000000000000AABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA00002D000000000000AABB /* PortBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PortBar.entitlements; sourceTree = "<group>"; };
 		AA00002E000000000000AABB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -106,6 +108,7 @@
 				AA00002A000000000000AABB /* PortRowView.swift */,
 				AA00002B000000000000AABB /* AboutView.swift */,
 				AA000043000000000000AABB /* PortScrollRowView.swift */,
+				AA000045000000000000AABB /* PortListPopoverView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -211,6 +214,7 @@
 				AA00003A000000000000AABB /* PortRowView.swift in Sources */,
 				AA00003B000000000000AABB /* AboutView.swift in Sources */,
 				AA000042000000000000AABB /* PortScrollRowView.swift in Sources */,
+				AA000044000000000000AABB /* PortListPopoverView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
