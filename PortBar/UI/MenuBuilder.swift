@@ -6,6 +6,34 @@ private class CallbackHolder: NSObject {
     init(_ callback: @escaping () -> Void) { self.callback = callback }
 }
 
+// How many ports to show inline per category before collapsing the rest
+private let kInlineLimit = 6
+
+// MARK: - Category
+
+private enum PortCategory: String, CaseIterable {
+    case dev      = "DEV SERVERS"
+    case database = "DATABASES"
+    case docker   = "DOCKER"
+    case other    = "OTHER"
+}
+
+private func category(for entry: PortEntry) -> PortCategory {
+    switch entry.framework {
+    case .nextjs, .vite, .express, .remix, .astro, .angular, .nuxt,
+         .node, .django, .fastapi, .flask, .rails, .python, .ruby:
+        return .dev
+    case .postgresql, .redis, .mongodb, .mysql:
+        return .database
+    case .docker, .nginx, .localstack:
+        return .docker
+    case .unknown:
+        return .other
+    }
+}
+
+// MARK: - Builder
+
 struct MenuBuilder {
     @MainActor
     static func build(
@@ -34,9 +62,7 @@ struct MenuBuilder {
         if ports.isEmpty {
             menu.addItem(NSMenuItem(title: "No active ports", action: nil, keyEquivalent: ""))
         } else {
-            for entry in ports {
-                menu.addItem(makePortItem(entry: entry))
-            }
+            addPortSections(ports: ports, to: menu)
         }
 
         menu.addItem(.separator())
@@ -50,6 +76,58 @@ struct MenuBuilder {
         menu.addItem(quitItem)
 
         return menu
+    }
+
+    // MARK: - Sections
+
+    private static func addPortSections(ports: [PortEntry], to menu: NSMenu) {
+        // Group ports by category, preserving sort order within each group
+        var grouped: [PortCategory: [PortEntry]] = [:]
+        for entry in ports {
+            let cat = category(for: entry)
+            grouped[cat, default: []].append(entry)
+        }
+
+        var didAddSection = false
+        for cat in PortCategory.allCases {
+            guard let entries = grouped[cat], !entries.isEmpty else { continue }
+
+            if didAddSection { menu.addItem(.separator()) }
+            didAddSection = true
+
+            // Section header (greyed out, not selectable)
+            let header = NSMenuItem(title: cat.rawValue, action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            header.attributedTitle = NSAttributedString(
+                string: cat.rawValue,
+                attributes: [
+                    .foregroundColor: NSColor.secondaryLabelColor,
+                    .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize, weight: .semibold)
+                ]
+            )
+            menu.addItem(header)
+
+            let inline = Array(entries.prefix(kInlineLimit))
+            let overflow = Array(entries.dropFirst(kInlineLimit))
+
+            for entry in inline {
+                menu.addItem(makePortItem(entry: entry))
+            }
+
+            if !overflow.isEmpty {
+                let moreItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+                moreItem.attributedTitle = NSAttributedString(
+                    string: "▸ \(overflow.count) more...",
+                    attributes: [.foregroundColor: NSColor.secondaryLabelColor]
+                )
+                let sub = NSMenu()
+                for entry in overflow {
+                    sub.addItem(makePortItem(entry: entry))
+                }
+                moreItem.submenu = sub
+                menu.addItem(moreItem)
+            }
+        }
     }
 
     // MARK: - Port row
@@ -68,14 +146,14 @@ struct MenuBuilder {
         let dot = NSAttributedString(string: "● ", attributes: [.foregroundColor: healthNSColor(entry.health)])
         result.append(dot)
 
-        // Port (monospaced)
+        // Port (monospaced bold)
         let portStr = NSAttributedString(
             string: ":\(entry.port)",
             attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .semibold)]
         )
         result.append(portStr)
 
-        // Label: framework name (or process name if unknown)
+        // Framework or fallback label
         let label = frameworkLabel(entry)
         result.append(NSAttributedString(string: "  \(label)"))
 
@@ -92,11 +170,7 @@ struct MenuBuilder {
     }
 
     private static func frameworkLabel(_ entry: PortEntry) -> String {
-        if entry.framework != .unknown {
-            return entry.framework.rawValue
-        }
-        // Fall back to project name, then process name
-        return entry.projectName ?? entry.processName
+        entry.framework != .unknown ? entry.framework.rawValue : (entry.projectName ?? entry.processName)
     }
 
     private static func makeSubmenu(entry: PortEntry) -> NSMenu {
@@ -129,7 +203,7 @@ struct MenuBuilder {
         }
 
         let infoItem = NSMenuItem(
-            title: "\(entry.framework.rawValue) · \(formatUptime(entry.uptime)) · PID \(entry.pid)",
+            title: "\(frameworkLabel(entry)) · \(formatUptime(entry.uptime)) · PID \(entry.pid)",
             action: nil, keyEquivalent: ""
         )
         infoItem.isEnabled = false
@@ -138,11 +212,13 @@ struct MenuBuilder {
         return sub
     }
 
+    // MARK: - Helpers
+
     private static func healthNSColor(_ health: HealthStatus) -> NSColor {
         switch health {
-        case .healthy: return .systemGreen
+        case .healthy:  return .systemGreen
         case .orphaned: return .systemYellow
-        case .zombie: return .systemRed
+        case .zombie:   return .systemRed
         }
     }
 
