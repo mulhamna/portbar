@@ -7,7 +7,7 @@ private enum Col {
     static let port: CGFloat    = 58   // :3000
     static let type: CGFloat    = 96   // Next.js, Vite …
     // project: .infinity
-    static let uptime: CGFloat  = 42   // 2h 4m
+    static let uptime: CGFloat  = 56   // 2h 4m
 }
 
 // MARK: - Root
@@ -83,7 +83,8 @@ struct PortListPopoverView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
 
             Text("UPTIME")
-                .frame(width: Col.uptime, alignment: .center)
+                .frame(width: Col.uptime, alignment: .trailing)
+                .padding(.trailing, 10)
 
             Text("TOOLS")
                 .frame(width: 86, alignment: .center)
