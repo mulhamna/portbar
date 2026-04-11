@@ -26,6 +26,13 @@ Click the icon → a panel drops down listing all your ports. Kill a runaway pro
 
 ## Install
 
+### Homebrew
+
+```bash
+brew tap mulhamna/tap
+brew install --cask portbar
+```
+
 ### Direct download
 
 1. Download `PortBar.dmg` from [Releases](../../releases)
