@@ -74,21 +74,19 @@ struct PortListPopoverView: View {
                 .frame(width: Col.health, alignment: .center)
 
             Text("PORT")
-                .frame(width: Col.port, alignment: .leading)
-                .padding(.leading, 8)
+                .frame(width: Col.port, alignment: .center)
 
             Text("TYPE")
-                .frame(width: Col.type, alignment: .leading)
+                .frame(width: Col.type, alignment: .center)
 
             Text("PROJECT")
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
 
-            Text("UP")
-                .frame(width: Col.uptime, alignment: .trailing)
-                .padding(.trailing, 10)
+            Text("UPTIME")
+                .frame(width: Col.uptime, alignment: .center)
 
-            // placeholder for action buttons area
-            Spacer().frame(width: 86)
+            Text("TOOLS")
+                .frame(width: 86, alignment: .center)
         }
         .font(.caption.weight(.semibold))
         .foregroundStyle(Color.secondary)
