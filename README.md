@@ -32,12 +32,6 @@ Click the icon → a panel drops down listing all your ports. Kill a runaway pro
 2. Open the DMG and drag **PortBar.app** to Applications
 3. Launch it — the `⚡` icon appears in your menu bar
 
-### Homebrew (coming soon)
-
-```bash
-brew install --cask portbar
-```
-
 ---
 
 ## Usage
@@ -111,7 +105,7 @@ For each port, PortBar checks (in order):
 Requirements: **Xcode 15+**, macOS 14+
 
 ```bash
-git clone https://github.com/yourname/portbar
+git clone https://github.com/mulhamna/portbar
 cd portbar
 open PortBar.xcodeproj
 ```
