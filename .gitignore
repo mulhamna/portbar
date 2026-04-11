@@ -64,5 +64,3 @@ fastlane/test_output
 # macOS
 .DS_Store
 
-# Local dev instructions
-CLAUDE.md
