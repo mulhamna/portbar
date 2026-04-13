@@ -67,6 +67,7 @@ class StatusBarController {
                 popover = p
             }
             popover?.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+            Task { await watchService.refresh() }
         }
     }
 

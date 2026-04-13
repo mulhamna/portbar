@@ -24,7 +24,11 @@ final class PortBarSettings: ObservableObject {
         didSet { UserDefaults.standard.set(displayMode.rawValue, forKey: "pb.displayMode") }
     }
 
-    @Published var autoWatch: Bool = UserDefaults.standard.bool(forKey: "pb.autoWatch") {
+    @Published var autoWatch: Bool = {
+        let key = "pb.autoWatch"
+        guard UserDefaults.standard.object(forKey: key) != nil else { return true }
+        return UserDefaults.standard.bool(forKey: key)
+    }() {
         didSet { UserDefaults.standard.set(autoWatch, forKey: "pb.autoWatch") }
     }
 

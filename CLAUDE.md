@@ -2,6 +2,23 @@
 
 > This file is the single source of truth for Claude Code. Read it fully before writing any code.
 
+## Smoke Test Requirement
+
+**Every code change must be followed by a smoke test before shipping.** No exceptions.
+
+Steps:
+1. Build: `xcodebuild -project PortBar.xcodeproj -scheme PortBar -configuration Debug build`
+2. Kill any running instance: `pkill -x PortBar`
+3. Launch: `open <DerivedData>/Build/Products/Debug/PortBar.app`
+4. Verify process is alive: `pgrep -x PortBar`
+5. Start a test port: `python3 -m http.server 8888 &`
+6. Wait ≤3s — confirm `⚡ 1` appears in menu bar and `:8888 Python` row is visible
+7. Kill test port: `kill <pid>`
+8. Confirm count drops back to `⚡ 0`
+9. Kill debug instance: `pkill -x PortBar`
+
+Only proceed to DMG/release if all steps pass.
+
 ## What is PortBar?
 
 A native macOS menu bar app that shows all active ports on the machine.

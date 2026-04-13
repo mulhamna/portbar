@@ -7,15 +7,21 @@ actor PortScanner {
         let pidPortPairs = parseLsofListen(lsofOutput)
         guard !pidPortPairs.isEmpty else { return [] }
 
-        let pids = Array(Set(pidPortPairs.map { $0.pid }))
+        // Early filter: drop known-skip processes before paying for ps/lsof cwd
+        let filteredPairs = includeAll
+            ? pidPortPairs
+            : pidPortPairs.filter { !shouldSkip(processName: $0.name, port: $0.port, framework: .unknown) }
+        guard !filteredPairs.isEmpty else { return [] }
+
+        let pids = Array(Set(filteredPairs.map { $0.pid }))
         let pidList = pids.map(String.init).joined(separator: ",")
 
-        // Call 2: Batch process details
-        let psOutput = try await shell("ps -o pid=,comm=,ppid=,stat=,etime= -p \(pidList) 2>/dev/null")
-        let processInfos = parsePs(psOutput)
+        // Call 2 + 3: Run in parallel — they're independent
+        async let psTask   = shell("ps -o pid=,comm=,ppid=,stat=,etime= -p \(pidList) 2>/dev/null")
+        async let cwdTask  = shell("lsof -d cwd -a -p \(pidList) -Fn 2>/dev/null")
+        let (psOutput, cwdOutput) = try await (psTask, cwdTask)
 
-        // Call 3: Batch working directories
-        let cwdOutput = try await shell("lsof -d cwd -a -p \(pidList) -Fn 2>/dev/null")
+        let processInfos = parsePs(psOutput)
         let cwdMap = parseCwd(cwdOutput)
 
         // Call 3b: Docker (conditional)
@@ -32,7 +38,7 @@ actor PortScanner {
         var seen = Set<String>()
         var entries: [PortEntry] = []
 
-        for pair in pidPortPairs {
+        for pair in filteredPairs {
             let key = "\(pair.pid)-\(pair.port)"
             guard !seen.contains(key) else { continue }
             seen.insert(key)
@@ -52,10 +58,6 @@ actor PortScanner {
                 framework = FrameworkDetector.detect(cwd: cwd, cmdline: nil, processName: info.name)
                 isDocker = false
                 dockerName = nil
-            }
-
-            if !includeAll && shouldSkip(processName: pair.name, port: pair.port, framework: framework) {
-                continue
             }
 
             let health = determineHealth(stat: info.stat, ppid: info.ppid, processName: info.name)
