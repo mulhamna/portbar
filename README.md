@@ -12,15 +12,17 @@ Click the icon → a panel drops down listing all your ports. Kill a runaway pro
 
 ## Features
 
-- **Live port list** — shows every TCP port in LISTEN state, sorted by port number
+- **Live port list** — shows every TCP port in LISTEN state with process name, type, project folder, and uptime
+- **Process column** — shows the exact binary name running on each port (e.g. `node`, `python3`, `ARDAgent`)
 - **Framework detection** — recognizes Next.js, Vite, Express, Django, FastAPI, Flask, Rails, PostgreSQL, Redis, MongoDB, nginx, and more
 - **Health status** — color-coded dot per port: 🟢 healthy · 🟡 orphaned · 🔴 zombie
+- **Filtered & All modes** — default view hides system/tool processes (matches `ports`); toggle **All** to show everything (matches `ports --all`)
 - **Watch mode** — polls every 3 seconds, menu bar title updates automatically
 - **Kill process** — confirms with a dialog, sends SIGTERM → SIGKILL after 3 seconds
 - **Open in browser** — one click for HTTP ports (80, 443, 3xxx, 4xxx, 8xxx)
 - **Copy port** — copies `:3000` style to clipboard
-- **Reveal in Finder** — shows the project directory for any port
-- Zero network calls — everything runs locally via `lsof` and `ps`
+- **Settings panel** — auto-watch on launch, default to All mode, and update checker
+- **Update checker** — notifies you in-app when a new version is available on GitHub
 
 ---
 
@@ -31,6 +33,8 @@ Click the icon → a panel drops down listing all your ports. Kill a runaway pro
 ```bash
 brew tap mulhamna/tap
 brew install --cask portbar
+xattr -dr com.apple.quarantine /Applications/PortBar.app
+open /Applications/PortBar.app
 ```
 
 ### Direct download
@@ -46,8 +50,10 @@ brew install --cask portbar
 | Action | How |
 |---|---|
 | See all ports | Click `⚡ N` in the menu bar |
+| Toggle All ports | Click the **filter** button (shows system & tool processes too) |
 | Enable watch mode | Click the **eye** button in the panel toolbar |
 | Manual refresh | Click the **↺** button |
+| Open settings | Click the **⚙️** button — auto-watch, default mode, update status |
 | Kill a process | Click the red **✕** button on a port row |
 | Open in browser | Click the **🌐** button (HTTP ports only) |
 | Copy port | Click the **📋** button |
@@ -100,7 +106,7 @@ For each port, PortBar checks (in order):
 
 ## Privacy & Security
 
-- **No network calls.** PortBar never phones home or contacts any external server.
+- **Minimal network calls.** PortBar only contacts GitHub's public releases API to check for updates — no telemetry, no analytics, no tracking.
 - **No disk scanning.** It only reads `package.json` in the working directory of each process it finds.
 - **No elevated privileges.** PortBar runs as your user. It can only kill processes you own.
 - **App Sandbox is off** — required because `lsof` and `ps` cannot run inside the macOS sandbox. This is standard for developer tools (same as many terminal apps and developer utilities). You can inspect the source and build it yourself.

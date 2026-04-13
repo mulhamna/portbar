@@ -22,6 +22,7 @@
 		AA00003B000000000000AABB /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002B000000000000AABB /* AboutView.swift */; };
 		AA000042000000000000AABB /* PortScrollRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000043000000000000AABB /* PortScrollRowView.swift */; };
 		AA000044000000000000AABB /* PortListPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000045000000000000AABB /* PortListPopoverView.swift */; };
+		AA000046000000000000AABB /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000047000000000000AABB /* UpdateChecker.swift */; };
 		AA00003C000000000000AABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00002C000000000000AABB /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +42,7 @@
 		AA00002B000000000000AABB /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		AA000043000000000000AABB /* PortScrollRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortScrollRowView.swift; sourceTree = "<group>"; };
 		AA000045000000000000AABB /* PortListPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortListPopoverView.swift; sourceTree = "<group>"; };
+		AA000047000000000000AABB /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		AA00002C000000000000AABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA00002D000000000000AABB /* PortBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PortBar.entitlements; sourceTree = "<group>"; };
 		AA00002E000000000000AABB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -97,6 +99,7 @@
 				AA000027000000000000AABB /* ProcessKiller.swift */,
 				AA000028000000000000AABB /* WatchService.swift */,
 				AA000041000000000000AABB /* Settings.swift */,
+				AA000047000000000000AABB /* UpdateChecker.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -215,6 +218,7 @@
 				AA00003B000000000000AABB /* AboutView.swift in Sources */,
 				AA000042000000000000AABB /* PortScrollRowView.swift in Sources */,
 				AA000044000000000000AABB /* PortListPopoverView.swift in Sources */,
+				AA000046000000000000AABB /* UpdateChecker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -339,7 +343,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.portbar.PortBar;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -360,7 +364,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.portbar.PortBar;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

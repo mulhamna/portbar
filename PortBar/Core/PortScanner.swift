@@ -54,7 +54,7 @@ actor PortScanner {
                 dockerName = nil
             }
 
-            if !includeAll && shouldSkip(processName: info.name, port: pair.port, framework: framework) {
+            if !includeAll && shouldSkip(processName: pair.name, port: pair.port, framework: framework) {
                 continue
             }
 
@@ -63,7 +63,7 @@ actor PortScanner {
 
             entries.append(PortEntry(
                 port: pair.port,
-                processName: URL(fileURLWithPath: info.name).lastPathComponent,
+                processName: pair.name,
                 pid: pair.pid,
                 projectName: projectName,
                 projectPath: cwd,
@@ -80,8 +80,8 @@ actor PortScanner {
 
     // MARK: - Parsers
 
-    private func parseLsofListen(_ output: String) -> [(pid: Int, port: Int)] {
-        var results: [(pid: Int, port: Int)] = []
+    private func parseLsofListen(_ output: String) -> [(pid: Int, port: Int, name: String)] {
+        var results: [(pid: Int, port: Int, name: String)] = []
         let lines = output.components(separatedBy: "\n").dropFirst() // skip header
         for line in lines {
             let parts = line.split(separator: " ", omittingEmptySubsequences: true)
@@ -90,7 +90,7 @@ actor PortScanner {
             // Use lastIndex to handle IPv6 addresses like [::1]:3000
             guard let colonIdx = nameField.lastIndex(of: ":"),
                   let port = Int(nameField[nameField.index(after: colonIdx)...]) else { continue }
-            results.append((pid: pid, port: port))
+            results.append((pid: pid, port: port, name: String(parts[0])))
         }
         return results
     }
@@ -171,11 +171,16 @@ actor PortScanner {
         return .docker
     }
 
+    // processName here comes from lsof COMMAND column (may be truncated to 9 chars)
     private func shouldSkip(processName: String, port: Int, framework: Framework) -> Bool {
         let systemProcesses: Set<String> = [
-            "Spotify", "Raycast", "UserEventAgent", "rapportd", "ControlCenter",
-            "mDNSResponder", "remoted", "sharingd", "AirPlayXPCHelper",
-            "ScreenSharingD", "CommCenter", "triald"
+            "rapportd",   // rapportd
+            "ControlCe",  // ControlCenter
+            "ARDAgent",   // ARDAgent
+            "language_",  // language_server
+            "figma_age",  // figma_agent
+            "Electron",   // Electron (VS Code, etc.)
+            "Postman",    // Postman
         ]
         if systemProcesses.contains(processName) { return true }
         if processName.hasPrefix("com.apple.") { return true }

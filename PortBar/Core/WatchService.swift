@@ -5,10 +5,27 @@ import Combine
 class WatchService: ObservableObject {
     @Published var ports: [PortEntry] = []
     @Published var isWatching: Bool = false
+    @Published var showAll: Bool = PortBarSettings.shared.defaultShowAll
 
     private var timer: Timer?
     private let scanner = PortScanner()
+    private var cancellables = Set<AnyCancellable>()
     var onPortsChanged: (([PortEntry], [PortEntry]) -> Void)?
+
+    init() {
+        // Auto-refresh when showAll changes
+        $showAll
+            .dropFirst()
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in await self?.refresh() }
+            }
+            .store(in: &cancellables)
+
+        // Auto-start watching if setting is on
+        if PortBarSettings.shared.autoWatch {
+            startWatching()
+        }
+    }
 
     func startWatching(interval: TimeInterval = 3.0) {
         isWatching = true
@@ -27,7 +44,7 @@ class WatchService: ObservableObject {
     }
 
     func refresh() async {
-        guard let newPorts = try? await scanner.scan() else { return }
+        guard let newPorts = try? await scanner.scan(includeAll: showAll) else { return }
         let oldPorts = ports
         let oldPortNumbers = Set(oldPorts.map { $0.port })
         let newPortNumbers = Set(newPorts.map { $0.port })

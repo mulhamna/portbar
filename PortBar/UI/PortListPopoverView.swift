@@ -3,21 +3,26 @@ import AppKit
 
 // MARK: - Column widths (shared between header & rows so they align)
 private enum Col {
-    static let health: CGFloat  = 20   // dot
-    static let port: CGFloat    = 58   // :3000
-    static let type: CGFloat    = 96   // Next.js, Vite …
+    static let health: CGFloat   = 20   // dot
+    static let port: CGFloat     = 58   // :3000
+    static let process: CGFloat  = 72   // node, python3 …
+    static let type: CGFloat     = 90   // Next.js, Vite …
     // project: .infinity
-    static let uptime: CGFloat  = 56   // 2h 4m
+    static let uptime: CGFloat   = 56   // 2h 4m
 }
 
 // MARK: - Root
 
 struct PortListPopoverView: View {
     @ObservedObject var watchService: WatchService
+    @ObservedObject private var settings = PortBarSettings.shared
+    @ObservedObject private var updater = UpdateChecker.shared
+    @State private var showSettings = false
 
     var body: some View {
         VStack(spacing: 0) {
             toolbar
+            if showSettings { settingsPanel; Divider() }
             Divider()
             columnHeader
             Divider()
@@ -39,6 +44,15 @@ struct PortListPopoverView: View {
             Spacer()
 
             Button {
+                watchService.showAll.toggle()
+            } label: {
+                Label("All", systemImage: watchService.showAll ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(watchService.showAll ? Color.accentColor : Color.secondary)
+            }
+            .buttonStyle(.plain)
+
+            Button {
                 if watchService.isWatching { watchService.stopWatching() }
                 else { watchService.startWatching() }
             } label: {
@@ -58,12 +72,108 @@ struct PortListPopoverView: View {
             }
             .buttonStyle(.plain)
 
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) { showSettings.toggle() }
+            } label: {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: showSettings ? "gearshape.fill" : "gearshape")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(showSettings ? Color.accentColor : Color.secondary)
+                    if updater.hasUpdate {
+                        Circle()
+                            .fill(Color.orange)
+                            .frame(width: 6, height: 6)
+                            .offset(x: 3, y: -3)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .task { await updater.check() }
+
             Text("⚡ " + String(watchService.ports.count))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.secondary)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+    }
+
+    // MARK: Settings panel
+
+    private var settingsPanel: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("SETTINGS")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 10)
+            .padding(.bottom, 6)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Auto Watch")
+                        .font(.caption.weight(.medium))
+                    Text("Automatically refresh ports every 3s on launch")
+                        .font(.caption2)
+                        .foregroundStyle(Color.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: $settings.autoWatch)
+                    .labelsHidden()
+                    .onChange(of: settings.autoWatch) { newValue in
+                        if newValue && !watchService.isWatching { watchService.startWatching() }
+                        else if !newValue && watchService.isWatching { watchService.stopWatching() }
+                    }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+
+            Divider().padding(.horizontal, 14)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Show All Ports by Default")
+                        .font(.caption.weight(.medium))
+                    Text("Include system & tool processes on launch")
+                        .font(.caption2)
+                        .foregroundStyle(Color.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: $settings.defaultShowAll)
+                    .labelsHidden()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+
+            Divider().padding(.horizontal, 14)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Version")
+                        .font(.caption.weight(.medium))
+                    if updater.hasUpdate, let latest = updater.latestVersion {
+                        Text("v\(latest) available — run: brew upgrade portbar")
+                            .font(.caption2)
+                            .foregroundStyle(Color.orange)
+                    } else {
+                        Text("Up to date")
+                            .font(.caption2)
+                            .foregroundStyle(Color.secondary)
+                    }
+                }
+                Spacer()
+                Text("v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(Color.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .padding(.bottom, 4)
+        }
+        .background(Color(NSColor.controlBackgroundColor))
     }
 
     // MARK: Column header
@@ -76,8 +186,11 @@ struct PortListPopoverView: View {
             Text("PORT")
                 .frame(width: Col.port, alignment: .center)
 
+            Text("PROCESS")
+                .frame(width: Col.process, alignment: .leading)
+
             Text("TYPE")
-                .frame(width: Col.type, alignment: .center)
+                .frame(width: Col.type, alignment: .leading)
 
             Text("PROJECT")
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -113,6 +226,7 @@ struct PortListPopoverView: View {
                             Divider().padding(.leading, 14)
                         }
                     }
+                    .animation(.easeInOut(duration: 0.18), value: watchService.ports.map { $0.id })
                 }
                 .frame(maxHeight: 400)
             }
@@ -159,6 +273,14 @@ struct PortPopoverRow: View {
                 .font(.system(.body, design: .monospaced).weight(.semibold))
                 .frame(width: Col.port, alignment: .leading)
                 .padding(.leading, 8)
+
+            // PROCESS
+            Text(entry.processName)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(width: Col.process, alignment: .leading)
 
             // TYPE
             Text(label)
