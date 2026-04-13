@@ -155,7 +155,7 @@ struct PortListPopoverView: View {
                     Text("Version")
                         .font(.caption.weight(.medium))
                     if updater.hasUpdate, let latest = updater.latestVersion {
-                        Text("v\(latest) available — run: brew upgrade portbar")
+                        Text("v\(latest) available — run: brew update && brew upgrade --cask portbar")
                             .font(.caption2)
                             .foregroundStyle(Color.orange)
                     } else {

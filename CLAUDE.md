@@ -19,6 +19,26 @@ Steps:
 
 Only proceed to DMG/release if all steps pass.
 
+## Versioning Rules
+
+Version format: `MAJOR.MINOR` (e.g. `2.1`, `3.0`)
+
+**When to bump MINOR** (e.g. 2.0 → 2.1):
+- Bug fixes
+- Small improvements to existing features (e.g. UI text, performance tweaks)
+- Any source file change that goes into a release, even if trivial
+
+**When to bump MAJOR** (e.g. 2.x → 3.0):
+- New user-facing features or capabilities
+- Breaking changes to existing behavior
+- Significant architectural changes
+
+**Rules:**
+- Never ship a DMG without bumping the version — even a one-line fix must increment MINOR
+- After bumping, rebuild DMG, recompute SHA256, and update `homebrew-tap/Casks/portbar.rb`
+- Version is set in `PortBar.xcodeproj/project.pbxproj` → `MARKETING_VERSION`
+- `CURRENT_PROJECT_VERSION` (build number) increments by 1 each release
+
 ## What is PortBar?
 
 A native macOS menu bar app that shows all active ports on the machine.

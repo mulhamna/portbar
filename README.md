@@ -37,6 +37,14 @@ xattr -dr com.apple.quarantine /Applications/PortBar.app
 open /Applications/PortBar.app
 ```
 
+### Update
+
+```bash
+brew update && brew upgrade --cask portbar
+```
+
+> `brew update` is required first — it refreshes the tap so Homebrew knows a new version is available.
+
 ### Direct download
 
 1. Download `PortBar.dmg` from [Releases](../../releases)
