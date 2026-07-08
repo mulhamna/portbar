@@ -43,6 +43,9 @@ struct MenuBuilder {
     ) -> NSMenu {
         let menu = NSMenu()
 
+        // Legacy menu path uses the singleton KillTarget — give it the ws to refresh after a kill.
+        KillTarget.shared.watchService = watchService
+
         // Watch toggle
         let watchTitle = watchService.isWatching ? "◉ Watch Mode" : "Watch Mode"
         let watchItem = NSMenuItem(title: watchTitle, action: #selector(WatchToggleTarget.toggle(_:)), keyEquivalent: "")
@@ -237,7 +240,7 @@ struct MenuBuilder {
         killItem.target = KillTarget.shared
         sub.addItem(killItem)
 
-        if isHTTPPort(entry.port) {
+        if shouldOfferBrowser(entry) {
             let openItem = NSMenuItem(title: "Open in Browser", action: #selector(OpenBrowserTarget.open(_:)), keyEquivalent: "")
             openItem.representedObject = entry as AnyObject
             openItem.target = OpenBrowserTarget.shared
@@ -277,6 +280,9 @@ struct MenuBuilder {
             string: ":\(entry.port)",
             attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .semibold)]
         ))
+        if entry.bindScope == .exposed {
+            result.append(NSAttributedString(string: " 📡"))
+        }
         let label = frameworkLabel(entry)
         result.append(NSAttributedString(string: "  \(label)"))
         if let project = entry.projectName, !project.isEmpty {
@@ -296,12 +302,6 @@ struct MenuBuilder {
         }
     }
 
-    private static func isHTTPPort(_ port: Int) -> Bool {
-        port == 80 || port == 443
-            || (3000...3999).contains(port)
-            || (4000...4999).contains(port)
-            || (8000...8999).contains(port)
-    }
 }
 
 // MARK: - Action targets
@@ -335,9 +335,11 @@ class RefreshTarget: NSObject {
 
 class KillTarget: NSObject {
     static let shared = KillTarget()
+    weak var watchService: WatchService?
     @objc func kill(_ sender: NSMenuItem) {
-        guard let entry = sender.representedObject as? PortEntry else { return }
-        Task { await ProcessKiller.kill(entry: entry) }
+        guard let entry = sender.representedObject as? PortEntry,
+              let ws = watchService else { return }
+        Task { await ProcessKiller.kill(entry: entry, watchService: ws) }
     }
 }
 
@@ -345,7 +347,7 @@ class OpenBrowserTarget: NSObject {
     static let shared = OpenBrowserTarget()
     @objc func open(_ sender: NSMenuItem) {
         guard let entry = sender.representedObject as? PortEntry,
-              let url = URL(string: "http://localhost:\(entry.port)") else { return }
+              let url = localhostURL(port: entry.port) else { return }
         NSWorkspace.shared.open(url)
     }
 }

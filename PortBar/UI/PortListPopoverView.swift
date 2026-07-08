@@ -5,10 +5,11 @@ import AppKit
 private enum Col {
     static let health: CGFloat   = 20   // dot
     static let port: CGFloat     = 58   // :3000
-    static let process: CGFloat  = 72   // node, python3 …
+    // process: .infinity — grows when the panel is widened, so full paths show
     static let type: CGFloat     = 90   // Next.js, Vite …
-    // project: .infinity
+    static let project: CGFloat  = 120  // project folder name
     static let uptime: CGFloat   = 56   // 2h 4m
+    static let processMin: CGFloat = 90
 }
 
 // MARK: - Root
@@ -18,6 +19,8 @@ struct PortListPopoverView: View {
     @ObservedObject private var settings = PortBarSettings.shared
     @ObservedObject private var updater = UpdateChecker.shared
     @State private var showSettings = false
+    @State private var dragBaseWidth: CGFloat?
+    @State private var dragBaseHeight: CGFloat?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,7 +33,7 @@ struct PortListPopoverView: View {
             Divider()
             footer
         }
-        .frame(width: 520)
+        .frame(width: settings.popoverWidth)
         .background(Color(NSColor.windowBackgroundColor))
     }
 
@@ -187,20 +190,20 @@ struct PortListPopoverView: View {
                 .frame(width: Col.port, alignment: .center)
 
             Text("PROCESS")
-                .frame(width: Col.process, alignment: .leading)
+                .frame(minWidth: Col.processMin, maxWidth: .infinity, alignment: .leading)
 
             Text("TYPE")
                 .frame(width: Col.type, alignment: .leading)
 
             Text("PROJECT")
-                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(width: Col.project, alignment: .leading)
 
             Text("UPTIME")
                 .frame(width: Col.uptime, alignment: .trailing)
                 .padding(.trailing, 10)
 
             Text("TOOLS")
-                .frame(width: 86, alignment: .center)
+                .frame(width: 104, alignment: .center)
         }
         .font(.caption.weight(.semibold))
         .foregroundStyle(Color.secondary)
@@ -222,13 +225,13 @@ struct PortListPopoverView: View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(watchService.ports) { entry in
-                            PortPopoverRow(entry: entry)
+                            PortPopoverRow(entry: entry, watchService: watchService)
                             Divider().padding(.leading, 14)
                         }
                     }
                     .animation(.easeInOut(duration: 0.18), value: watchService.ports.map { $0.id })
                 }
-                .frame(maxHeight: 400)
+                .frame(maxHeight: settings.popoverListHeight)
             }
         }
     }
@@ -247,9 +250,44 @@ struct PortListPopoverView: View {
                 .buttonStyle(.plain)
                 .font(.caption)
                 .foregroundStyle(Color.secondary)
+
+            resizeGrip
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 7)
+    }
+
+    // Drag to resize the panel (width + list height), persisted in settings.
+    private var resizeGrip: some View {
+        Image(systemName: "arrow.up.left.and.arrow.down.right")
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(.tertiary)
+            .padding(.leading, 8)
+            .contentShape(Rectangle())
+            .help("Drag to resize")
+            .gesture(
+                DragGesture()
+                    .onChanged { g in
+                        let baseW = dragBaseWidth ?? settings.popoverWidth
+                        let baseH = dragBaseHeight ?? settings.popoverListHeight
+                        dragBaseWidth = baseW
+                        dragBaseHeight = baseH
+                        settings.popoverWidth = (baseW + g.translation.width)
+                            .clamped(to: PortBarSettings.widthRange)
+                        settings.popoverListHeight = (baseH + g.translation.height)
+                            .clamped(to: PortBarSettings.heightRange)
+                    }
+                    .onEnded { _ in
+                        dragBaseWidth = nil
+                        dragBaseHeight = nil
+                    }
+            )
+    }
+}
+
+private extension CGFloat {
+    func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+        Swift.min(Swift.max(self, range.lowerBound), range.upperBound)
     }
 }
 
@@ -257,7 +295,10 @@ struct PortListPopoverView: View {
 
 struct PortPopoverRow: View {
     let entry: PortEntry
+    @ObservedObject var watchService: WatchService
     @State private var hovered = false
+    @State private var hoverProcess = false
+    @State private var hoverProject = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -274,13 +315,17 @@ struct PortPopoverRow: View {
                 .frame(width: Col.port, alignment: .leading)
                 .padding(.leading, 8)
 
-            // PROCESS
+            // PROCESS — full path; column grows with the panel width. Hover = tooltip.
             Text(entry.processName)
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(width: Col.process, alignment: .leading)
+                .truncationMode(.middle)
+                .frame(minWidth: Col.processMin, maxWidth: .infinity, alignment: .leading)
+                .onHover { hoverProcess = $0 }
+                .overlay(alignment: .topLeading) {
+                    if hoverProcess { HoverPathBubble(text: entry.processName) }
+                }
 
             // TYPE
             Text(label)
@@ -292,7 +337,13 @@ struct PortPopoverRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(width: Col.project, alignment: .leading)
+                .onHover { hoverProject = $0 }
+                .overlay(alignment: .topLeading) {
+                    if hoverProject, let p = entry.projectPath ?? entry.projectName {
+                        HoverPathBubble(text: p)
+                    }
+                }
 
             // UP
             Text(formatUptime(entry.uptime))
@@ -303,17 +354,27 @@ struct PortPopoverRow: View {
 
             // Actions
             HStack(spacing: 4) {
-                if isHTTP {
+                // LAN-exposure marker: other devices can reach this port.
+                if entry.bindScope == .exposed {
+                    Image(systemName: "dot.radiowaves.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.orange)
+                        .frame(width: 18)
+                        .help("Reachable from other devices on your network")
+                } else {
+                    Spacer().frame(width: 18)   // keep actions aligned
+                }
+                if shouldOfferBrowser(entry) {
                     PortActionButton(icon: "globe", tint: .blue) { openBrowser() }
                 } else {
                     Spacer().frame(width: 30)   // keep kill/copy aligned
                 }
                 PortActionButton(icon: "doc.on.doc", tint: Color(NSColor.secondaryLabelColor)) { copyPort() }
                 PortActionButton(icon: "xmark.circle.fill", tint: .red) {
-                    Task { await ProcessKiller.kill(entry: entry) }
+                    Task { await ProcessKiller.kill(entry: entry, watchService: watchService) }
                 }
             }
-            .frame(width: 86, alignment: .trailing)
+            .frame(width: 104, alignment: .trailing)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
@@ -336,21 +397,37 @@ struct PortPopoverRow: View {
         }
     }
 
-    private var isHTTP: Bool {
-        entry.port == 80 || entry.port == 443
-            || (3000...3999).contains(entry.port)
-            || (4000...4999).contains(entry.port)
-            || (8000...8999).contains(entry.port)
-    }
-
     private func openBrowser() {
-        guard let url = URL(string: "http://localhost:\(entry.port)") else { return }
+        guard let url = localhostURL(port: entry.port) else { return }
         NSWorkspace.shared.open(url)
     }
 
     private func copyPort() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(":" + String(entry.port), forType: .string)
+    }
+}
+
+// MARK: - Hover reveal bubble (SwiftUI .help / native toolTip are unreliable in NSPopover)
+
+struct HoverPathBubble: View {
+    let text: String
+    var body: some View {
+        Text(text)
+            .font(.system(.caption, design: .monospaced))
+            .textSelection(.enabled)
+            .lineLimit(3)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: 460, alignment: .leading)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.12)))
+            .shadow(color: .black.opacity(0.28), radius: 5, y: 2)
+            .offset(y: 22)
+            .zIndex(100)
+            .allowsHitTesting(false)
+            .transition(.opacity)
     }
 }
 
