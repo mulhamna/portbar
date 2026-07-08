@@ -16,10 +16,11 @@ Click the icon → a panel drops down listing all your ports. Kill a runaway pro
 - **Process column** — shows the exact binary name running on each port (e.g. `node`, `python3`, `ARDAgent`)
 - **Framework detection** — recognizes Next.js, Vite, Express, Django, FastAPI, Flask, Rails, PostgreSQL, Redis, MongoDB, nginx, and more
 - **Health status** — color-coded dot per port: 🟢 healthy · 🟡 orphaned · 🔴 zombie
+- **LAN-exposure marker** — an orange 📡 antenna flags ports bound to all interfaces (`0.0.0.0`/`*`), meaning other devices on your network can reach them; ports bound to `127.0.0.1` (local-only) have no marker
 - **Filtered & All modes** — default view hides system/tool processes (matches `ports`); toggle **All** to show everything (matches `ports --all`)
 - **Watch mode** — polls every 3 seconds, menu bar title updates automatically
 - **Kill process** — confirms with a dialog, sends SIGTERM → SIGKILL after 3 seconds
-- **Open in browser** — one click for HTTP ports (80, 443, 3xxx, 4xxx, 8xxx)
+- **Open in browser** — one click for HTTP ports (80, 443, 3xxx, 4xxx, 5xxx, 8xxx) and any detected web framework (Vite, Next.js, Django, …)
 - **Copy port** — copies `:3000` style to clipboard
 - **Settings panel** — auto-watch on launch, default to All mode, and update checker
 - **Update checker** — notifies you in-app when a new version is available on GitHub
@@ -27,6 +28,14 @@ Click the icon → a panel drops down listing all your ports. Kill a runaway pro
 ---
 
 ## Install
+
+### Quick install (curl)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mulhamna/portbar/main/scripts/install.sh | bash
+```
+
+Downloads the latest release DMG, installs to `/Applications`, clears quarantine, and launches it.
 
 ### Homebrew
 
@@ -63,9 +72,44 @@ brew update && brew upgrade --cask portbar
 | Manual refresh    | Click the **↺** button                                           |
 | Open settings     | Click the **⚙️** button — auto-watch, default mode, update status |
 | Kill a process    | Click the red **✕** button on a port row                         |
-| Open in browser   | Click the **🌐** button (HTTP ports only)                         |
+| Open in browser   | Click the **🌐** button (HTTP ports & web frameworks)             |
+| Spot LAN-exposed  | Orange **📡** on a row = reachable by other devices on your network |
 | Copy port         | Click the **📋** button                                           |
+| Resize the panel  | Drag the **⤡** grip in the footer (bottom-right); size is remembered |
 | Quit              | Footer → Quit                                                    |
+
+### Icon reference
+
+**Toolbar (top of the panel)**
+
+| Icon | Meaning |
+| ---- | ------- |
+| filter | Toggle **All** — include system & tool processes |
+| 👁 eye | Toggle **Watch** — auto-refresh every 3s |
+| ↻ | Manual refresh |
+| ⚙️ gear | Settings (orange dot = update available) |
+| ⚡ N | Number of listening ports |
+
+**Per-port row**
+
+| Icon | Meaning |
+| ---- | ------- |
+| 🟢 / 🟡 / 🔴 dot | Health — healthy / orphaned / zombie |
+| 🟠 `(·))` waves | **LAN-exposed** — bound to all interfaces, other devices can reach it. Absent = local-only (`127.0.0.1`) |
+| 🌐 globe | Open in browser (HTTP ports & web frameworks) |
+| 📄 copy | Copy `:PORT` to clipboard |
+| ⊗ red | Kill the process |
+
+> Hover a truncated **PROCESS** or **PROJECT** cell to see its full path.
+
+---
+
+## What's new in v3.0
+
+- **LAN-exposure marker** — an orange 📡 antenna now flags any port bound to all interfaces (`0.0.0.0`/`*`/`::`), so you can tell at a glance which ports other devices on your network can reach vs. local-only (`127.0.0.1`) ports
+- **Reliable kill** — killing a process now refreshes the list immediately (row disappears at once instead of lingering until the next poll), and kills the whole process group so dev-server child workers can't keep the port alive or respawn
+- **Wider browser button** — the 🌐 button now covers the `5xxx` range (Vite's `5173`, Flask, CRA) and any detected web framework, not just `3xxx`/`4xxx`/`8xxx`
+- **Sturdier scanner** — ports whose `ps` lookup races are still shown (built from `lsof` data) instead of vanishing; Docker container names resolve even when `lsof` truncates the process name; port `443` opens over `https`
 
 ---
 
