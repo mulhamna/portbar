@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release PR / tag
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  release-build:
+    name: Build DMG + publish
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    runs-on: macos-15
+    env:
+      TAG: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      - name: Resolve version
+        id: v
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Release
+        run: |
+          xcodebuild \
+            -project PortBar.xcodeproj \
+            -scheme PortBar \
+            -configuration Release \
+            -destination "platform=macOS" \
+            -derivedDataPath build \
+            build \
+            MARKETING_VERSION="${{ steps.v.outputs.version }}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package DMG
+        run: |
+          VERSION="${{ steps.v.outputs.version }}"
+          STAGE="$(mktemp -d)"
+          cp -R build/Build/Products/Release/PortBar.app "$STAGE/"
+          ln -s /Applications "$STAGE/Applications"
+          hdiutil create -volname "PortBar" -srcfolder "$STAGE" -ov -format UDZO "PortBar-$VERSION.dmg"
+          echo "SHA=$(shasum -a 256 "PortBar-$VERSION.dmg" | awk '{print $1}')" >> "$GITHUB_ENV"
+
+      - name: Upload DMG to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$TAG" "PortBar-${{ steps.v.outputs.version }}.dmg" --clobber
+
+      - name: Update Homebrew cask
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+        run: |
+          VERSION="${{ steps.v.outputs.version }}"
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/mulhamna/homebrew-tap" tap
+          cd tap
+          sed -i '' -E "s/version \"[^\"]+\"/version \"$VERSION\"/" Casks/portbar.rb
+          sed -i '' -E "s/sha256 \"[^\"]+\"/sha256 \"$SHA\"/" Casks/portbar.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: portbar $VERSION"
+          git push
