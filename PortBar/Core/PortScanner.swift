@@ -24,14 +24,26 @@ actor PortScanner {
         let processInfos = parsePs(psOutput)
         let cwdMap = parseCwd(cwdOutput)
 
-        // Call 3b: Docker (conditional)
+        // Call 3b: Docker (conditional). lsof truncates COMMAND to 9 chars, so
+        // "com.docker.backend" arrives as "com.docke" — match the prefix too.
         let hasDocker = processInfos.values.contains {
-            $0.name.lowercased().contains("docker") || $0.name == "com.docker"
+            let n = $0.name.lowercased()
+            return n.hasPrefix("docker") || n.hasPrefix("com.docke") || n.contains("docker")
         }
-        var dockerPortMap: [Int: (name: String, image: String)] = [:]
+        var dockerPortMap: [Int: (name: String, image: String, scope: BindScope)] = [:]
         if hasDocker {
             let dockerOutput = (try? await shell("docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}' 2>/dev/null")) ?? ""
             dockerPortMap = parseDocker(dockerOutput)
+        }
+
+        // A pid+port can appear twice (e.g. IPv4 loopback + IPv6 wildcard) — the
+        // most-exposed binding wins so we never mislabel a LAN-reachable port as local.
+        var scopeByKey: [String: BindScope] = [:]
+        for pair in filteredPairs {
+            let key = "\(pair.pid)-\(pair.port)"
+            if scopeByKey[key] == nil || pair.scope == .exposed {
+                scopeByKey[key] = pair.scope
+            }
         }
 
         // Build entries
@@ -43,35 +55,41 @@ actor PortScanner {
             guard !seen.contains(key) else { continue }
             seen.insert(key)
 
-            guard let info = processInfos[pair.pid] else { continue }
-
+            let info = processInfos[pair.pid]
             let cwd = cwdMap[pair.pid]
+            let scope = scopeByKey[key] ?? pair.scope
             let framework: Framework
             let isDocker: Bool
             let dockerName: String?
+            let bindScope: BindScope
 
             if let dockerInfo = dockerPortMap[pair.port] {
                 framework = detectDockerFramework(image: dockerInfo.image)
                 isDocker = true
                 dockerName = dockerInfo.name
+                bindScope = dockerInfo.scope
             } else {
-                framework = FrameworkDetector.detect(cwd: cwd, cmdline: nil, processName: info.name)
+                framework = FrameworkDetector.detect(cwd: cwd, cmdline: nil, processName: info?.name ?? pair.name)
                 isDocker = false
                 dockerName = nil
+                bindScope = scope
             }
 
-            let health = determineHealth(stat: info.stat, ppid: info.ppid, processName: info.name)
+            // #5: ps can race and drop a PID — still surface the port with lsof data
+            // rather than hiding a live listener.
+            let health = info.map { determineHealth(stat: $0.stat, ppid: $0.ppid, processName: $0.name) } ?? .healthy
             let projectName = cwd.map { URL(fileURLWithPath: $0).lastPathComponent }
 
             entries.append(PortEntry(
                 port: pair.port,
-                processName: pair.name,
+                processName: info?.name ?? pair.name,
                 pid: pair.pid,
                 projectName: projectName,
                 projectPath: cwd,
                 framework: framework,
-                uptime: parseEtime(info.etime),
+                uptime: parseEtime(info?.etime ?? ""),
                 health: health,
+                bindScope: bindScope,
                 isDockerContainer: isDocker,
                 dockerContainerName: dockerName
             ))
@@ -82,8 +100,8 @@ actor PortScanner {
 
     // MARK: - Parsers
 
-    private func parseLsofListen(_ output: String) -> [(pid: Int, port: Int, name: String)] {
-        var results: [(pid: Int, port: Int, name: String)] = []
+    private func parseLsofListen(_ output: String) -> [(pid: Int, port: Int, name: String, scope: BindScope)] {
+        var results: [(pid: Int, port: Int, name: String, scope: BindScope)] = []
         let lines = output.components(separatedBy: "\n").dropFirst() // skip header
         for line in lines {
             let parts = line.split(separator: " ", omittingEmptySubsequences: true)
@@ -92,9 +110,16 @@ actor PortScanner {
             // Use lastIndex to handle IPv6 addresses like [::1]:3000
             guard let colonIdx = nameField.lastIndex(of: ":"),
                   let port = Int(nameField[nameField.index(after: colonIdx)...]) else { continue }
-            results.append((pid: pid, port: port, name: String(parts[0])))
+            let host = String(nameField[..<colonIdx])
+            results.append((pid: pid, port: port, name: String(parts[0]), scope: bindScope(forHost: host)))
         }
         return results
+    }
+
+    // Local iff bound to loopback; anything else (0.0.0.0, *, ::, a specific IP) is LAN-reachable.
+    private func bindScope(forHost host: String) -> BindScope {
+        let localHosts: Set<String> = ["127.0.0.1", "::1", "[::1]", "localhost"]
+        return localHosts.contains(host) ? .localOnly : .exposed
     }
 
     private struct ProcessInfo {
@@ -136,8 +161,8 @@ actor PortScanner {
         return result
     }
 
-    private func parseDocker(_ output: String) -> [Int: (name: String, image: String)] {
-        var result: [Int: (name: String, image: String)] = [:]
+    private func parseDocker(_ output: String) -> [Int: (name: String, image: String, scope: BindScope)] {
+        var result: [Int: (name: String, image: String, scope: BindScope)] = [:]
         for line in output.components(separatedBy: "\n") {
             let parts = line.components(separatedBy: "\t")
             guard parts.count >= 3 else { continue }
@@ -151,8 +176,9 @@ actor PortScanner {
                    let arrowIdx = trimmed.range(of: "->")?.lowerBound,
                    colonIdx < arrowIdx {
                     let portStr = String(trimmed[trimmed.index(after: colonIdx)..<arrowIdx])
+                    let host = String(trimmed[..<colonIdx])
                     if let port = Int(portStr) {
-                        result[port] = (name: name, image: image)
+                        result[port] = (name: name, image: image, scope: bindScope(forHost: host))
                     }
                 }
             }
@@ -224,6 +250,31 @@ func parseEtime(_ etime: String) -> TimeInterval {
         break
     }
     return total
+}
+
+// Single source of truth for "does this port speak HTTP?" — used by popover + menu.
+// Frameworks that serve HTTP always get a browser button regardless of port range.
+private let webFrameworks: Set<Framework> = [
+    .nextjs, .vite, .express, .remix, .astro, .angular, .nuxt,
+    .django, .fastapi, .flask, .rails,
+]
+
+func shouldOfferBrowser(_ entry: PortEntry) -> Bool {
+    isHTTPPort(entry.port) || webFrameworks.contains(entry.framework)
+}
+
+func isHTTPPort(_ port: Int) -> Bool {
+    port == 80 || port == 443
+        || (3000...3999).contains(port)
+        || (4000...4999).contains(port)
+        || (5000...5999).contains(port)   // Vite (5173), CRA, Flask default
+        || (8000...8999).contains(port)
+}
+
+// Localhost URL for a port — https only for :443.
+func localhostURL(port: Int) -> URL? {
+    let scheme = port == 443 ? "https" : "http"
+    return URL(string: "\(scheme)://localhost:\(port)")
 }
 
 func formatUptime(_ seconds: TimeInterval) -> String {
