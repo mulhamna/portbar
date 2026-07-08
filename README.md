@@ -8,6 +8,10 @@ A native macOS menu bar app that shows every active listening port on your machi
 
 Click the icon → a panel drops down listing all your ports. Kill a runaway process, open it in the browser, or copy the port — all without touching the terminal.
 
+<p align="center">
+  <img src="docs/img/portbar.png" alt="PortBar popover showing active ports with process, project, uptime, LAN-exposure marker and action buttons" width="620">
+</p>
+
 ---
 
 ## Features
