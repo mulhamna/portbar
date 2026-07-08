@@ -207,7 +207,8 @@ struct PortListPopoverView: View {
         }
         .font(.caption.weight(.semibold))
         .foregroundStyle(Color.secondary)
-        .padding(.horizontal, 14)
+        .padding(.leading, 14)
+        .padding(.trailing, 26)   // match row gutter so columns stay aligned
         .padding(.vertical, 5)
         .background(Color(NSColor.controlBackgroundColor))
     }
@@ -376,7 +377,8 @@ struct PortPopoverRow: View {
             }
             .frame(width: 104, alignment: .trailing)
         }
-        .padding(.horizontal, 14)
+        .padding(.leading, 14)
+        .padding(.trailing, 26)   // clear the scroll bar gutter so ✕ isn't covered
         .padding(.vertical, 6)
         .background(hovered ? Color(NSColor.selectedContentBackgroundColor).opacity(0.1) : Color.clear)
         .onHover { hovered = $0 }

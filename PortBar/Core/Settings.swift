@@ -7,19 +7,22 @@ final class PortBarSettings: ObservableObject {
     private init() {}
 
     // Popover size — user-resizable via the footer grip, persisted across launches.
-    static let widthRange: ClosedRange<CGFloat>  = 460...1000
+    // Lower bound must fit every column or rows overflow and get clipped.
+    static let widthRange: ClosedRange<CGFloat>  = 600...1100
     static let heightRange: ClosedRange<CGFloat> = 240...760
 
     @Published var popoverWidth: CGFloat = {
         let v = CGFloat(UserDefaults.standard.double(forKey: "pb.popoverWidth"))
-        return v > 0 ? v : 520
+        let d = v > 0 ? v : 600
+        return min(max(d, widthRange.lowerBound), widthRange.upperBound)
     }() {
         didSet { UserDefaults.standard.set(Double(popoverWidth), forKey: "pb.popoverWidth") }
     }
 
     @Published var popoverListHeight: CGFloat = {
         let v = CGFloat(UserDefaults.standard.double(forKey: "pb.popoverListHeight"))
-        return v > 0 ? v : 400
+        let d = v > 0 ? v : 400
+        return min(max(d, heightRange.lowerBound), heightRange.upperBound)
     }() {
         didSet { UserDefaults.standard.set(Double(popoverListHeight), forKey: "pb.popoverListHeight") }
     }
