@@ -26,6 +26,7 @@ echo "→ Downloading $URL"
 curl -fsSL "$URL" -o "$TMP/$DMG_NAME"
 
 echo "→ Mounting"
+mkdir -p "$TMP/mnt"
 hdiutil attach "$TMP/$DMG_NAME" -nobrowse -quiet -mountpoint "$TMP/mnt"
 
 echo "→ Copying to /Applications"

@@ -19,25 +19,26 @@ Steps:
 
 Only proceed to DMG/release if all steps pass.
 
-## Versioning Rules
+## Versioning & Release (automated)
 
-Version format: `MAJOR.MINOR` (e.g. `2.1`, `3.0`)
+Versioning is owned by **release-please** (semver `MAJOR.MINOR.PATCH`, e.g. `3.0.0`).
+Do **not** hand-edit `MARKETING_VERSION` — the release build injects it from the
+release tag. Version is tracked in `.release-please-manifest.json` / `version.txt`.
 
-**When to bump MINOR** (e.g. 2.0 → 2.1):
-- Bug fixes
-- Small improvements to existing features (e.g. UI text, performance tweaks)
-- Any source file change that goes into a release, even if trivial
+**How a release happens:**
+1. Land conventional commits on `main` (`feat:` → minor, `fix:` → patch,
+   `feat!`/`BREAKING CHANGE` → major). Use `Release-As: X.Y.Z` in a commit footer
+   to force a specific version.
+2. `release-please` opens/updates a **release PR** (bumps version + CHANGELOG).
+3. Merging that PR tags `vX.Y.Z` and cuts a GitHub Release.
+4. `.github/workflows/release-please.yml` then builds the Release config
+   (`MARKETING_VERSION` = tag, `CURRENT_PROJECT_VERSION` = run number), packages
+   `PortBar-X.Y.Z.dmg`, attaches it to the release, and pushes the new version +
+   sha256 to the `mulhamna/homebrew-tap` cask.
 
-**When to bump MAJOR** (e.g. 2.x → 3.0):
-- New user-facing features or capabilities
-- Breaking changes to existing behavior
-- Significant architectural changes
-
-**Rules:**
-- Never ship a DMG without bumping the version — even a one-line fix must increment MINOR
-- After bumping, rebuild DMG, recompute SHA256, and update `homebrew-tap/Casks/portbar.rb`
-- Version is set in `PortBar.xcodeproj/project.pbxproj` → `MARKETING_VERSION`
-- `CURRENT_PROJECT_VERSION` (build number) increments by 1 each release
+**Manual steps are gone** — no hand-built DMG, no manual sha256, no manual cask
+edit. The only prerequisite is the repo secret `TAP_TOKEN` (PAT with `repo` scope
+on the tap). The app is unsigned/unnotarized; users clear quarantine on install.
 
 ## What is PortBar?
 
