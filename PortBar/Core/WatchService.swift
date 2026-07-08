@@ -46,10 +46,13 @@ class WatchService: ObservableObject {
     func refresh() async {
         guard let newPorts = try? await scanner.scan(includeAll: showAll) else { return }
         let oldPorts = ports
-        let oldPortNumbers = Set(oldPorts.map { $0.port })
-        let newPortNumbers = Set(newPorts.map { $0.port })
-        let added = newPorts.filter { !oldPortNumbers.contains($0.port) }
-        let removed = oldPorts.filter { !newPortNumbers.contains($0.port) }
+        // Key on pid+port so a rebind (same port, new PID) counts as a change and
+        // the stale PID isn't carried forward.
+        let key: (PortEntry) -> String = { "\($0.pid)-\($0.port)" }
+        let oldKeys = Set(oldPorts.map(key))
+        let newKeys = Set(newPorts.map(key))
+        let added = newPorts.filter { !oldKeys.contains(key($0)) }
+        let removed = oldPorts.filter { !newKeys.contains(key($0)) }
         ports = newPorts
         if !added.isEmpty || !removed.isEmpty {
             onPortsChanged?(added, removed)

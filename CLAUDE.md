@@ -130,7 +130,12 @@ Each `PortPopoverRow` shows:
 - TYPE label: `entry.framework.rawValue` if known, otherwise `entry.projectName ?? entry.processName`
 - PROJECT (truncated middle, `.infinity` width)
 - Uptime (`formatUptime()`)
-- Action buttons: `🌐` (HTTP only), `📋`, `✕`
+- Action buttons: `📡` (orange, only when `bindScope == .exposed`), `🌐`, `📋`, `✕`
+
+The `🌐` button and the legacy menu's "Open in Browser" share one source of truth
+in `PortScanner.swift`: `shouldOfferBrowser(entry)` = `isHTTPPort(port)` (80, 443,
+3xxx, 4xxx, **5xxx**, 8xxx) OR the framework is a web framework. `localhostURL(port:)`
+builds the URL and uses `https` only for `:443`. Never duplicate these ranges in the UI.
 
 ### NSPopover trigger
 
@@ -177,6 +182,11 @@ enum HealthStatus {
     case zombie     // process in Z state
 }
 
+enum BindScope {
+    case localOnly  // bound to 127.0.0.1 / ::1 — only this machine
+    case exposed    // bound to 0.0.0.0 / * / :: / a specific IP — reachable from the LAN
+}
+
 enum Framework: String {
     case nextjs = "Next.js", vite = "Vite", express = "Express"
     case remix = "Remix", astro = "Astro", angular = "Angular", nuxt = "Nuxt"
@@ -199,6 +209,7 @@ struct PortEntry: Identifiable {
     let framework: Framework
     let uptime: TimeInterval
     let health: HealthStatus
+    let bindScope: BindScope
     let isDockerContainer: Bool
     let dockerContainerName: String?
 }
@@ -239,6 +250,21 @@ Skip known system processes: `Spotify`, `Raycast`, `com.apple.*`, `UserEventAgen
 - `stat` contains `Z` → `.zombie`
 - `ppid == 1` AND dev runtime → `.orphaned`
 - otherwise → `.healthy`
+
+### Bind scope (LAN exposure)
+`parseLsofListen` keeps the host portion of the lsof NAME field (everything before
+the last `:`), not just the port. Classify via `bindScope(forHost:)`:
+- host ∈ `{127.0.0.1, ::1, [::1], localhost}` → `.localOnly`
+- anything else (`*`, `0.0.0.0`, `::`, `[::]`, a specific LAN IP) → `.exposed`
+
+A pid+port can appear on multiple bindings (IPv4 loopback + IPv6 wildcard). Merge
+with **exposed-wins**: if any binding is exposed the entry is `.exposed`. Docker
+entries take scope from the publish host in `docker ps` (`parseDocker`).
+
+### Missing-PID fallback
+If `ps` races and returns no row for a listening pid, still emit the entry from
+lsof data (`processName` from lsof, `health = .healthy`, `uptime = 0`) rather than
+dropping a live port.
 
 ---
 
@@ -288,14 +314,19 @@ Observes `watchService.$ports`, `watchService.$isWatching`, and `PortBarSettings
 
 ```swift
 struct ProcessKiller {
-    static func kill(entry: PortEntry) async
+    static func kill(entry: PortEntry, watchService: WatchService) async
 }
 ```
 
 - Confirm with `NSAlert` first
-- `Darwin.kill(pid, SIGTERM)` → wait 3s → `Darwin.kill(pid, SIGKILL)` if still alive
+- Kills the **process group** (`kill(-pgid, …)`) so dev-server child workers die
+  too and can't hold the port or respawn. Falls back to single-pid kill when the
+  target shares our own group (`pgid == getpgid(0)`) — never nuke PortBar's session.
+- `SIGTERM` → wait 3s → `SIGKILL` if still alive
 - No `sudo` — only kills user-owned processes
-- Triggers `WatchService.refresh()` after kill
+- Takes the `WatchService` and calls `await watchService.refresh()` after the kill
+  so the row disappears immediately. Popover passes it via `PortPopoverRow`; the
+  legacy NSMenu path sets `KillTarget.shared.watchService` in `MenuBuilder.build`.
 
 ---
 

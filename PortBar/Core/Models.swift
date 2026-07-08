@@ -6,6 +6,12 @@ enum HealthStatus {
     case zombie
 }
 
+// Whether the listening socket is reachable only from this machine or from the LAN.
+enum BindScope {
+    case localOnly   // bound to 127.0.0.1 / ::1
+    case exposed     // bound to 0.0.0.0 / * / :: / a specific interface — other devices can reach it
+}
+
 enum Framework: String {
     // Node / JS
     case nextjs = "Next.js"
@@ -46,6 +52,7 @@ struct PortEntry: Identifiable {
     let framework: Framework
     let uptime: TimeInterval
     let health: HealthStatus
+    let bindScope: BindScope
     let isDockerContainer: Bool
     let dockerContainerName: String?
 }
