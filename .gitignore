@@ -63,7 +63,7 @@ fastlane/test_output
 
 # macOS
 .DS_Store
+.claude
 
 # Build output
 build/
-
