@@ -46,6 +46,14 @@ class StatusBarController: NSObject, NSPopoverDelegate {
                 self?.rebuildUI()
             }
             .store(in: &cancellables)
+
+        PortBarSettings.shared.$showCount
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.updateTitle(ports: self.watchService.ports)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Rebuild
@@ -104,12 +112,15 @@ class StatusBarController: NSObject, NSPopoverDelegate {
 
     private func updateTitle(ports: [PortEntry]) {
         guard let button = statusItem.button else { return }
+        let showCount = PortBarSettings.shared.showCount
+        // Health tint only carries meaning next to a number; petir-only stays neutral.
         let hasZombie   = ports.contains { $0.health == .zombie }
         let hasOrphaned = ports.contains { $0.health == .orphaned }
-        let color: NSColor = hasZombie ? .systemRed : hasOrphaned ? .systemYellow : .labelColor
-        let prefix = watchService.isWatching ? "◉ " : ""
+        let color: NSColor = showCount
+            ? (hasZombie ? .systemRed : hasOrphaned ? .systemYellow : .labelColor)
+            : .labelColor
         button.attributedTitle = NSAttributedString(
-            string: "\(prefix)⚡ \(ports.count)",
+            string: showCount ? "⚡ \(ports.count)" : "⚡",
             attributes: [.foregroundColor: color]
         )
     }

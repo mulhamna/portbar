@@ -57,4 +57,14 @@ final class PortBarSettings: ObservableObject {
     @Published var defaultShowAll: Bool = UserDefaults.standard.bool(forKey: "pb.defaultShowAll") {
         didSet { UserDefaults.standard.set(defaultShowAll, forKey: "pb.defaultShowAll") }
     }
+
+    // Menu bar shows just ⚡ by default; opt in to the numeric count.
+    @Published var showCount: Bool = UserDefaults.standard.bool(forKey: "pb.showCount") {
+        didSet { UserDefaults.standard.set(showCount, forKey: "pb.showCount") }
+    }
+
+    // Opt-in: avoids an unprompted notification permission dialog on first launch.
+    @Published var notifyOnNewPort: Bool = UserDefaults.standard.bool(forKey: "pb.notifyOnNewPort") {
+        didSet { UserDefaults.standard.set(notifyOnNewPort, forKey: "pb.notifyOnNewPort") }
+    }
 }
