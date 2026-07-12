@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/mulhamna/portbar/compare/v3.0.0...v3.1.0) (2026-07-12)
+
+
+### Features
+
+* petir-only menu bar with opt-in count and new-port notifications ([2f4dc87](https://github.com/mulhamna/portbar/commit/2f4dc87f84cdbbac97b163817c442aaf6de28193))
+
 ## [3.0.0](https://github.com/mulhamna/portbar/compare/v2.1.0...v3.0.0) (2026-07-08)
 
 
