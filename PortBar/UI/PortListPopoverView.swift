@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UserNotifications
 
 // MARK: - Column widths (shared between header & rows so they align)
 private enum Col {
@@ -129,6 +130,46 @@ struct PortListPopoverView: View {
                     .onChange(of: settings.autoWatch) { newValue in
                         if newValue && !watchService.isWatching { watchService.startWatching() }
                         else if !newValue && watchService.isWatching { watchService.stopWatching() }
+                    }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+
+            Divider().padding(.horizontal, 14)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Show Port Count")
+                        .font(.caption.weight(.medium))
+                    Text("Show the number next to ⚡ in the menu bar")
+                        .font(.caption2)
+                        .foregroundStyle(Color.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: $settings.showCount)
+                    .labelsHidden()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+
+            Divider().padding(.horizontal, 14)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Notify on New Port")
+                        .font(.caption.weight(.medium))
+                    Text("Banner when a new port opens while watching")
+                        .font(.caption2)
+                        .foregroundStyle(Color.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: $settings.notifyOnNewPort)
+                    .labelsHidden()
+                    .onChange(of: settings.notifyOnNewPort) { on in
+                        if on {
+                            UNUserNotificationCenter.current()
+                                .requestAuthorization(options: [.alert, .sound]) { _, _ in }
+                        }
                     }
             }
             .padding(.horizontal, 14)

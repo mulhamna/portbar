@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/img/logo.png" alt="PortBar" width="128"></p>
+
 # PortBar
 
 A native macOS menu bar app that shows every active listening port on your machine — with process name, framework detection, project folder, uptime, and health status.
