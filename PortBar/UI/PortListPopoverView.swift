@@ -34,16 +34,8 @@ struct PortListPopoverView: View {
             Divider()
             footer
         }
-        .frame(width: min(settings.popoverWidth, maxDisplayWidth))
+        .frame(width: min(settings.popoverWidth, settings.maxPopoverWidth))
         .background(Color(NSColor.windowBackgroundColor))
-    }
-
-    // Cap the rendered width to the menu-bar display so the popover can't run off
-    // the right edge when the status icon sits near the screen's right side.
-    // ponytail: primary-screen only; pass the button's actual screen if multi-monitor
-    // clipping is ever reported.
-    private var maxDisplayWidth: CGFloat {
-        (NSScreen.screens.first?.visibleFrame.width ?? 1440) - 24
     }
 
     // MARK: Toolbar
