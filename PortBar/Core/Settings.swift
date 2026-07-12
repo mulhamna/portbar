@@ -19,6 +19,11 @@ final class PortBarSettings: ObservableObject {
         didSet { UserDefaults.standard.set(Double(popoverWidth), forKey: "pb.popoverWidth") }
     }
 
+    // Runtime-only (not persisted). Set by StatusBarController from the icon's screen
+    // position each time the popover opens, so a center-anchored popover never falls
+    // off-screen near the menu bar edge.
+    @Published var maxPopoverWidth: CGFloat = .greatestFiniteMagnitude
+
     @Published var popoverListHeight: CGFloat = {
         let v = CGFloat(UserDefaults.standard.double(forKey: "pb.popoverListHeight"))
         let d = v > 0 ? v : 400

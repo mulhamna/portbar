@@ -80,6 +80,14 @@ class StatusBarController: NSObject, NSPopoverDelegate {
                 )
                 popover = p
             }
+            // Cap render width to what fits symmetrically under the icon so the
+            // center-anchored popover can't run off the right (or left) screen edge.
+            if let win = sender.window {
+                let onScreen = win.convertToScreen(sender.convert(sender.bounds, to: nil))
+                let vf = (win.screen ?? NSScreen.main)?.visibleFrame ?? onScreen
+                let room = min(onScreen.midX - vf.minX, vf.maxX - onScreen.midX)
+                PortBarSettings.shared.maxPopoverWidth = max(480, room * 2 - 16)
+            }
             popover?.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
             installDismissMonitors()
             Task { await watchService.refresh() }
