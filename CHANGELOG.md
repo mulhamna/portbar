@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.1](https://github.com/mulhamna/portbar/compare/v3.1.0...v3.1.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* clamp popover width to screen so it doesn't clip near right edge ([f05fea8](https://github.com/mulhamna/portbar/commit/f05fea8c531974c9438ed3dc74b13a5fe54d3b22))
+* clamp popover width to screen so it doesn't clip near right edge ([fd3f6e9](https://github.com/mulhamna/portbar/commit/fd3f6e9a1e0770e66113e9a43f69f40ae0a90357))
+
 ## [3.1.0](https://github.com/mulhamna/portbar/compare/v3.0.0...v3.1.0) (2026-07-12)
 
 
