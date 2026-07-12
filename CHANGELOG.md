@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.2](https://github.com/mulhamna/portbar/compare/v3.1.1...v3.1.2) (2026-07-12)
+
+
+### Bug Fixes
+
+* size popover to fit around the status icon so it never clips ([36423e6](https://github.com/mulhamna/portbar/commit/36423e660797ff9d9623bb8370b5a25f3145aa6a))
+
 ## [3.1.1](https://github.com/mulhamna/portbar/compare/v3.1.0...v3.1.1) (2026-07-12)
 
 
