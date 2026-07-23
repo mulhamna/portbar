@@ -223,7 +223,7 @@ actor PortScanner {
     }
 }
 
-// MARK: - Uptime helpers (global, used by MenuBuilder too)
+// MARK: - Uptime helpers (global)
 
 func parseEtime(_ etime: String) -> TimeInterval {
     var total: TimeInterval = 0

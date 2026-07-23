@@ -32,25 +32,6 @@ final class PortBarSettings: ObservableObject {
         didSet { UserDefaults.standard.set(Double(popoverListHeight), forKey: "pb.popoverListHeight") }
     }
 
-    enum DisplayMode: String, CaseIterable {
-        case grouped = "grouped"
-        case flat    = "flat"
-
-        var label: String {
-            switch self {
-            case .grouped: return "Grouped by Category"
-            case .flat:    return "Flat List (Scrollable)"
-            }
-        }
-    }
-
-    @Published var displayMode: DisplayMode = {
-        let raw = UserDefaults.standard.string(forKey: "pb.displayMode") ?? ""
-        return DisplayMode(rawValue: raw) ?? .grouped
-    }() {
-        didSet { UserDefaults.standard.set(displayMode.rawValue, forKey: "pb.displayMode") }
-    }
-
     @Published var autoWatch: Bool = {
         let key = "pb.autoWatch"
         guard UserDefaults.standard.object(forKey: key) != nil else { return true }
