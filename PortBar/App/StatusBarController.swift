@@ -38,15 +38,6 @@ class StatusBarController: NSObject, NSPopoverDelegate {
             .sink { [weak self] _ in self?.rebuildUI() }
             .store(in: &cancellables)
 
-        PortBarSettings.shared.$displayMode
-            .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
-                self?.popover?.close()
-                self?.popover = nil
-                self?.rebuildUI()
-            }
-            .store(in: &cancellables)
-
         PortBarSettings.shared.$showCount
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
