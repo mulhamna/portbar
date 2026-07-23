@@ -90,11 +90,9 @@ PortBar/
     │   ├── FrameworkDetector.swift  ← maps process cwd/cmdline → Framework enum
     │   ├── ProcessKiller.swift      ← NSAlert confirmation, SIGTERM → SIGKILL
     │   ├── WatchService.swift       ← Timer-based polling, publishes via Combine
-    │   └── Settings.swift           ← PortBarSettings (displayMode UserDefaults)
+    │   └── Settings.swift           ← PortBarSettings (popover size + toggles, UserDefaults)
     ├── UI/
-    │   ├── MenuBuilder.swift        ← builds NSMenu (grouped mode + action targets)
-    │   ├── PortListPopoverView.swift ← primary UI: SwiftUI popover with column layout
-    │   └── PortScrollRowView.swift  ← AppKit row view (used in flat NSMenu embed, legacy)
+    │   └── PortListPopoverView.swift ← primary UI: SwiftUI popover with column layout
     ├── Resources/
     │   ├── Assets.xcassets/
     │   │   └── AppIcon.appiconset/
@@ -133,7 +131,7 @@ Each `PortPopoverRow` shows:
 - Uptime (`formatUptime()`)
 - Action buttons: `📡` (orange, only when `bindScope == .exposed`), `🌐`, `📋`, `✕`
 
-The `🌐` button and the legacy menu's "Open in Browser" share one source of truth
+The `🌐` button's HTTP check has one source of truth
 in `PortScanner.swift`: `shouldOfferBrowser(entry)` = `isHTTPPort(port)` (80, 443,
 3xxx, 4xxx, **5xxx**, 8xxx) OR the framework is a web framework. `localhostURL(port:)`
 builds the URL and uses `https` only for `:443`. Never duplicate these ranges in the UI.
@@ -159,18 +157,15 @@ The popover is lazily created on first click and reused (`.transient` behavior).
 ```swift
 final class PortBarSettings: ObservableObject {
     static let shared = PortBarSettings()
-    enum DisplayMode: String, CaseIterable {
-        case grouped = "grouped"
-        case flat    = "flat"
-        var label: String { ... }
-    }
-    @Published var displayMode: DisplayMode  // persisted in UserDefaults "pb.displayMode"
+    // Popover size (persisted), plus toggles: autoWatch, defaultShowAll,
+    // showCount (menu bar ⚡ N vs ⚡), notifyOnNewPort.
+    @Published var popoverWidth: CGFloat       // "pb.popoverWidth"
+    @Published var popoverListHeight: CGFloat  // "pb.popoverListHeight"
+    @Published var showCount: Bool             // "pb.showCount"
 }
 ```
 
-`StatusBarController` observes `$displayMode` — on change it closes/nils the popover and calls `rebuildUI()`.
-
-> Note: With the popover as primary UI, `displayMode` affects `MenuBuilder` (used for the Settings submenu layout toggle), but the main interactive UI is always the popover.
+`StatusBarController` observes `$showCount` to redraw the menu-bar title.
 
 ---
 
@@ -307,7 +302,7 @@ Poll interval: **3 seconds** when watching, manual otherwise.
 - When watching: prepend `◉ `
 
 ### Combine observers
-Observes `watchService.$ports`, `watchService.$isWatching`, and `PortBarSettings.shared.$displayMode`.
+Observes `watchService.$ports`, `watchService.$isWatching`, and `PortBarSettings.shared.$showCount`.
 
 ---
 
@@ -326,21 +321,7 @@ struct ProcessKiller {
 - `SIGTERM` → wait 3s → `SIGKILL` if still alive
 - No `sudo` — only kills user-owned processes
 - Takes the `WatchService` and calls `await watchService.refresh()` after the kill
-  so the row disappears immediately. Popover passes it via `PortPopoverRow`; the
-  legacy NSMenu path sets `KillTarget.shared.watchService` in `MenuBuilder.build`.
-
----
-
-## MenuBuilder (MenuBuilder.swift)
-
-Builds the NSMenu for the grouped display mode (legacy/settings). Key parts:
-
-- **Grouped categories:** DEV SERVERS, DATABASES, DOCKER, OTHER
-- Max 6 inline per category, rest collapse to `▸ N more...` submenu
-- Shared helpers (used by both grouped rows and flat scroll rows):
-  - `static func makePortSubmenu(entry:) -> NSMenu` — Kill / Open in Browser / Copy / Reveal in Finder
-  - `static func buildPortTitle(entry:) -> NSAttributedString` — health dot + port + label + project + uptime
-- Action targets (singletons): `DisplayModeTarget`, `WatchToggleTarget`, `RefreshTarget`, `KillTarget`, `OpenBrowserTarget`, `CopyTarget`, `RevealTarget`
+  so the row disappears immediately. Popover passes it via `PortPopoverRow`.
 
 ---
 
