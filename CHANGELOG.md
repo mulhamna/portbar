@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.3](https://github.com/mulhamna/portbar/compare/v3.1.2...v3.1.3) (2026-07-24)
+
+
+### Bug Fixes
+
+* stabilize PortEntry id to stop watch-list flicker ([a82f360](https://github.com/mulhamna/portbar/commit/a82f360cf09b8e733bd748563d04fe3782371eea))
+* stabilize PortEntry id to stop watch-list flicker ([296a9f8](https://github.com/mulhamna/portbar/commit/296a9f80e38ccc2554dac4c097cf1a0119b4251e))
+
 ## [3.1.2](https://github.com/mulhamna/portbar/compare/v3.1.1...v3.1.2) (2026-07-12)
 
 
