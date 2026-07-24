@@ -43,7 +43,10 @@ enum Framework: String {
 }
 
 struct PortEntry: Identifiable {
-    let id = UUID()
+    // Stable identity so SwiftUI reuses row views across watch ticks instead of
+    // rebuilding (a fresh UUID per scan caused the list to flicker). pid+port
+    // matches WatchService's change-detection key: a rebind yields a new id.
+    var id: String { "\(pid)-\(port)" }
     let port: Int
     let processName: String
     let pid: Int
