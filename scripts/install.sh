@@ -3,40 +3,48 @@
 # Usage: curl -fsSL https://raw.githubusercontent.com/mulhamna/portbar/main/scripts/install.sh | bash
 set -euo pipefail
 
-REPO="mulhamna/portbar"
-APP="PortBar"
-DMG_NAME="PortBar.dmg"
+# Entire script body lives in main(), called only at the very end. Bash must
+# fully parse this function block before running any of it, so a `curl | bash`
+# pipe that gets cut mid-download fails with a syntax error instead of
+# executing a truncated prefix of the script.
+main() {
+    REPO="mulhamna/portbar"
+    APP="PortBar"
+    DMG_NAME="PortBar.dmg"
 
-echo "⚡ Installing $APP…"
+    echo "⚡ Installing ${APP}…"
 
-# Resolve the latest release DMG asset URL from the GitHub API.
-URL=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
-    | grep -o "https://github.com/$REPO/releases/download/[^\"]*\.dmg" \
-    | head -1)
+    # Resolve the latest release DMG asset URL from the GitHub API.
+    URL=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
+        | grep -o "https://github.com/$REPO/releases/download/[^\"]*\.dmg" \
+        | head -1)
 
-if [ -z "${URL:-}" ]; then
-    echo "✗ Could not find a release DMG. Check https://github.com/$REPO/releases" >&2
-    exit 1
-fi
+    if [ -z "${URL:-}" ]; then
+        echo "✗ Could not find a release DMG. Check https://github.com/$REPO/releases" >&2
+        exit 1
+    fi
 
-TMP=$(mktemp -d)
-trap 'hdiutil detach "$TMP/mnt" >/dev/null 2>&1 || true; rm -rf "$TMP"' EXIT
+    TMP=$(mktemp -d)
+    trap 'hdiutil detach "$TMP/mnt" >/dev/null 2>&1 || true; rm -rf "$TMP"' EXIT
 
-echo "→ Downloading $URL"
-curl -fsSL "$URL" -o "$TMP/$DMG_NAME"
+    echo "→ Downloading $URL"
+    curl -fsSL "$URL" -o "$TMP/$DMG_NAME"
 
-echo "→ Mounting"
-mkdir -p "$TMP/mnt"
-hdiutil attach "$TMP/$DMG_NAME" -nobrowse -quiet -mountpoint "$TMP/mnt"
+    echo "→ Mounting"
+    mkdir -p "$TMP/mnt"
+    hdiutil attach "$TMP/$DMG_NAME" -nobrowse -quiet -mountpoint "$TMP/mnt"
 
-echo "→ Copying to /Applications"
-rm -rf "/Applications/$APP.app"
-cp -R "$TMP/mnt/$APP.app" /Applications/
+    echo "→ Copying to /Applications"
+    rm -rf "/Applications/$APP.app"
+    cp -R "$TMP/mnt/$APP.app" /Applications/
 
-echo "→ Clearing quarantine"
-xattr -dr com.apple.quarantine "/Applications/$APP.app" || true
+    echo "→ Clearing quarantine"
+    xattr -dr com.apple.quarantine "/Applications/$APP.app" || true
 
-echo "→ Launching"
-open "/Applications/$APP.app"
+    echo "→ Launching"
+    open "/Applications/$APP.app"
 
-echo "✓ Done — look for the ⚡ icon in your menu bar."
+    echo "✓ Done — look for the ⚡ icon in your menu bar."
+}
+
+main "$@"
