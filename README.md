@@ -58,6 +58,15 @@ open /Applications/PortBar.app
 brew update && brew upgrade --cask portbar
 ```
 
+### Troubleshooting: "Not Opened / Apple could not verify..."
+
+PortBar is unsigned, so macOS quarantines any freshly downloaded or upgraded
+copy (this also happens after `brew upgrade --cask portbar`). Clear it:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/PortBar.app
+```
+
 > `brew update` is required first — it refreshes the tap so Homebrew knows a new version is available.
 
 ### Direct download
