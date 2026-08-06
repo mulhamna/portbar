@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.4](https://github.com/mulhamna/portbar/compare/v3.1.3...v3.1.4) (2026-08-06)
+
+
+### Bug Fixes
+
+* prevent installer crash and Gatekeeper block on curl install ([10089d3](https://github.com/mulhamna/portbar/commit/10089d3ecd95e8cbc2be1802592f0c319756cd10))
+* prevent installer crash and Gatekeeper block on curl install ([d9d8660](https://github.com/mulhamna/portbar/commit/d9d86600bb39f1d0154c80eab1479f3cefe43d14))
+
 ## [3.1.3](https://github.com/mulhamna/portbar/compare/v3.1.2...v3.1.3) (2026-07-24)
 
 
