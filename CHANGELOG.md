@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.2.0](https://github.com/mulhamna/portbar/compare/v3.1.4...v3.2.0) (2026-08-11)
+
+
+### Features
+
+* add port search and related-port grouping ([724f4b6](https://github.com/mulhamna/portbar/commit/724f4b6e075a89b924166769fe16456932772d60))
+* add port search and related-port grouping to popover ([f32d3a7](https://github.com/mulhamna/portbar/commit/f32d3a7e9e9a596de1bcf1d5e79b51f822240209))
+* warn about related ports before killing a process ([dd103ce](https://github.com/mulhamna/portbar/commit/dd103ce54d8a9931006218401896015f88b2ae5f))
+
 ## [3.1.4](https://github.com/mulhamna/portbar/compare/v3.1.3...v3.1.4) (2026-08-06)
 
 
