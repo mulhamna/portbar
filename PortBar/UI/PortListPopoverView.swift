@@ -20,6 +20,7 @@ struct PortListPopoverView: View {
     @ObservedObject private var settings = PortBarSettings.shared
     @ObservedObject private var updater = UpdateChecker.shared
     @State private var showSettings = false
+    @State private var searchText = ""
     @State private var dragBaseWidth: CGFloat?
     @State private var dragBaseHeight: CGFloat?
 
@@ -44,6 +45,27 @@ struct PortListPopoverView: View {
         HStack(spacing: 12) {
             Text("PortBar")
                 .font(.headline)
+
+            HStack(spacing: 4) {
+                Image(systemName: "magnifyingglass")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                TextField("Filter", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(.caption)
+                if !searchText.isEmpty {
+                    Button { searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 5))
+            .frame(maxWidth: 150)
 
             Spacer()
 
@@ -94,7 +116,7 @@ struct PortListPopoverView: View {
             .buttonStyle(.plain)
             .task { await updater.check() }
 
-            Text("⚡ " + String(watchService.ports.count))
+            Text("⚡ " + String(filteredPorts.count))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.secondary)
         }
@@ -224,6 +246,8 @@ struct PortListPopoverView: View {
 
     private var columnHeader: some View {
         HStack(spacing: 0) {
+            Color.clear.frame(width: 3, height: 1)
+
             Text("H")
                 .frame(width: Col.health, alignment: .center)
 
@@ -254,6 +278,49 @@ struct PortListPopoverView: View {
         .background(Color(NSColor.controlBackgroundColor))
     }
 
+    // MARK: Filtering & grouping
+
+    private var filteredPorts: [PortEntry] {
+        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return watchService.ports }
+        let qLower = q.lowercased()
+        return watchService.ports.filter { entry in
+            String(entry.port).contains(q)
+                || entry.processName.lowercased().contains(qLower)
+                || (entry.projectName?.lowercased().contains(qLower) ?? false)
+        }
+    }
+
+    // Same-cwd grouping only — Docker containers carry no projectPath today.
+    private var relatedGroups: [String: [PortEntry]] {
+        Dictionary(grouping: watchService.ports.filter { $0.projectPath != nil }) { $0.projectPath! }
+            .filter { $0.value.count > 1 }
+    }
+
+    private static let groupPalette: [Color] = [.blue, .purple, .orange, .teal, .pink, .mint, .indigo, .yellow]
+
+    // Cluster related ports next to each other instead of pure ascending order.
+    private var orderedPorts: [PortEntry] {
+        func clusterKey(_ entry: PortEntry) -> Int {
+            if let path = entry.projectPath, let group = relatedGroups[path] {
+                return group.map(\.port).min() ?? entry.port
+            }
+            return entry.port
+        }
+        return filteredPorts.sorted { a, b in
+            let ka = clusterKey(a), kb = clusterKey(b)
+            if ka != kb { return ka < kb }
+            return a.port < b.port
+        }
+    }
+
+    private func groupColor(for entry: PortEntry) -> Color? {
+        guard let path = entry.projectPath, relatedGroups[path] != nil else { return nil }
+        let sortedPaths = relatedGroups.keys.sorted()
+        guard let index = sortedPaths.firstIndex(of: path) else { return nil }
+        return Self.groupPalette[index % Self.groupPalette.count]
+    }
+
     // MARK: Port list
 
     private var portList: some View {
@@ -263,15 +330,20 @@ struct PortListPopoverView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(40)
+            } else if filteredPorts.isEmpty {
+                Text("No ports match \"\(searchText)\"")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(40)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(watchService.ports) { entry in
-                            PortPopoverRow(entry: entry, watchService: watchService)
+                        ForEach(orderedPorts) { entry in
+                            PortPopoverRow(entry: entry, groupColor: groupColor(for: entry), watchService: watchService)
                             Divider().padding(.leading, 14)
                         }
                     }
-                    .animation(.easeInOut(duration: 0.18), value: watchService.ports.map { $0.id })
+                    .animation(.easeInOut(duration: 0.18), value: orderedPorts.map { $0.id })
                 }
                 .frame(maxHeight: settings.popoverListHeight)
             }
@@ -282,7 +354,7 @@ struct PortListPopoverView: View {
 
     private var footer: some View {
         HStack {
-            Text(String(watchService.ports.count) + " ports listening")
+            Text(String(filteredPorts.count) + " ports listening")
                 .font(.caption)
                 .foregroundStyle(Color.secondary)
 
@@ -337,6 +409,7 @@ private extension CGFloat {
 
 struct PortPopoverRow: View {
     let entry: PortEntry
+    let groupColor: Color?
     @ObservedObject var watchService: WatchService
     @State private var hovered = false
     @State private var hoverProcess = false
@@ -344,6 +417,11 @@ struct PortPopoverRow: View {
 
     var body: some View {
         HStack(spacing: 0) {
+
+            // Related-project color stripe — same color = same project group.
+            Rectangle()
+                .fill(groupColor ?? .clear)
+                .frame(width: 3)
 
             // H — health dot
             Circle()
