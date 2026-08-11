@@ -4,9 +4,25 @@ import Darwin
 struct ProcessKiller {
     static func kill(entry: PortEntry, watchService: WatchService) async {
         let confirmed = await MainActor.run { () -> Bool in
+            var siblingCount = 0
+            if let path = entry.projectPath {
+                let siblings = watchService.ports.filter { $0.projectPath == path && $0.pid != entry.pid }
+                siblingCount = siblings.count
+            }
+
             let alert = NSAlert()
             alert.messageText = "Kill \(entry.processName) on :\(entry.port)?"
-            alert.informativeText = entry.projectName.map { "Project: \($0)" } ?? "PID: \(entry.pid)"
+            let baseInfo: String
+            if let project = entry.projectName {
+                baseInfo = "Project: \(project)"
+            } else {
+                baseInfo = "PID: \(entry.pid)"
+            }
+            if siblingCount > 0 {
+                alert.informativeText = baseInfo + "\n\(siblingCount) other port(s) share this project and may be affected."
+            } else {
+                alert.informativeText = baseInfo
+            }
             alert.alertStyle = .warning
             alert.addButton(withTitle: "Kill")
             alert.addButton(withTitle: "Cancel")
