@@ -7,9 +7,36 @@ final class PortBarSettings: ObservableObject {
     private init() {}
 
     // Popover size — user-resizable via the footer grip, persisted across launches.
-    // Lower bound must fit every column or rows overflow and get clipped.
-    static let widthRange: ClosedRange<CGFloat>  = 600...1100
+    // The lower bound is derived from the enabled columns (see minPopoverWidth), so
+    // a narrow layout can shrink further than the old fixed 600 and a wide one can't
+    // be dragged small enough to clip rows.
+    static let widthRange: ClosedRange<CGFloat>  = 360...1100
     static let heightRange: ClosedRange<CGFloat> = 240...760
+
+    // Row chrome outside the columns: 14pt leading + 26pt scrollbar gutter + 3pt
+    // group stripe, rounded up so the default layout lands on the historical 600.
+    private static let rowChrome: CGFloat = 44
+
+    /// Narrowest width that still renders every enabled column without clipping.
+    var minPopoverWidth: CGFloat {
+        let content = columns.reduce(CGFloat(0)) { $0 + $1.minimumWidth }
+        return min(max(content + Self.rowChrome, Self.widthRange.lowerBound), Self.widthRange.upperBound)
+    }
+
+    /// Resize bounds for the current column set.
+    var effectiveWidthRange: ClosedRange<CGFloat> { minPopoverWidth...Self.widthRange.upperBound }
+
+    // Order and membership of the popover's columns.
+    @Published var columns: [PortColumn] = PortColumn.sanitized(
+        UserDefaults.standard.stringArray(forKey: "pb.columns")
+    ) {
+        didSet {
+            UserDefaults.standard.set(columns.map(\.rawValue), forKey: "pb.columns")
+            // Adding a column to an already-narrow panel would otherwise clip rows.
+            let range = effectiveWidthRange
+            popoverWidth = min(max(popoverWidth, range.lowerBound), range.upperBound)
+        }
+    }
 
     @Published var popoverWidth: CGFloat = {
         let v = CGFloat(UserDefaults.standard.double(forKey: "pb.popoverWidth"))

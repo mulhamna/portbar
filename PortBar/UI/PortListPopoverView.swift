@@ -2,16 +2,8 @@ import SwiftUI
 import AppKit
 import UserNotifications
 
-// MARK: - Column widths (shared between header & rows so they align)
-private enum Col {
-    static let health: CGFloat   = 20   // dot
-    static let port: CGFloat     = 58   // :3000
-    // process: .infinity — grows when the panel is widened, so full paths show
-    static let type: CGFloat     = 90   // Next.js, Vite …
-    static let project: CGFloat  = 120  // project folder name
-    static let uptime: CGFloat   = 56   // 2h 4m
-    static let processMin: CGFloat = 90
-}
+// Column widths and alignment live in PortColumn — the header and the row both
+// iterate settings.columns so they can't drift apart.
 
 // MARK: - Root
 
@@ -246,29 +238,13 @@ struct PortListPopoverView: View {
 
     private var columnHeader: some View {
         HStack(spacing: 0) {
+            // Matches the row's group-color stripe so the columns line up.
             Color.clear.frame(width: 3, height: 1)
 
-            Text("H")
-                .frame(width: Col.health, alignment: .center)
-
-            Text("PORT")
-                .frame(width: Col.port, alignment: .center)
-
-            Text("PROCESS")
-                .frame(minWidth: Col.processMin, maxWidth: .infinity, alignment: .leading)
-
-            Text("TYPE")
-                .frame(width: Col.type, alignment: .leading)
-
-            Text("PROJECT")
-                .frame(width: Col.project, alignment: .leading)
-
-            Text("UPTIME")
-                .frame(width: Col.uptime, alignment: .trailing)
-                .padding(.trailing, 10)
-
-            Text("TOOLS")
-                .frame(width: 104, alignment: .center)
+            ForEach(settings.columns) { column in
+                Text(column.title)
+                    .portColumnFrame(column, alignment: column.headerAlignment)
+            }
         }
         .font(.caption.weight(.semibold))
         .foregroundStyle(Color.secondary)
@@ -387,7 +363,7 @@ struct PortListPopoverView: View {
                         dragBaseWidth = baseW
                         dragBaseHeight = baseH
                         settings.popoverWidth = (baseW + g.translation.width)
-                            .clamped(to: PortBarSettings.widthRange)
+                            .clamped(to: settings.effectiveWidthRange)
                         settings.popoverListHeight = (baseH + g.translation.height)
                             .clamped(to: PortBarSettings.heightRange)
                     }
@@ -411,6 +387,7 @@ struct PortPopoverRow: View {
     let entry: PortEntry
     let groupColor: Color?
     @ObservedObject var watchService: WatchService
+    @ObservedObject private var settings = PortBarSettings.shared
     @State private var hovered = false
     @State private var hoverProcess = false
     @State private var hoverProject = false
@@ -423,41 +400,54 @@ struct PortPopoverRow: View {
                 .fill(groupColor ?? .clear)
                 .frame(width: 3)
 
-            // H — health dot
+            ForEach(settings.columns) { column in
+                cell(for: column)
+                    .portColumnFrame(column, alignment: column.cellAlignment)
+            }
+        }
+        .padding(.leading, 14)
+        .padding(.trailing, 26)   // clear the scroll bar gutter so ✕ isn't covered
+        .padding(.vertical, 6)
+        .background(hovered ? Color(NSColor.selectedContentBackgroundColor).opacity(0.1) : Color.clear)
+        .onHover { hovered = $0 }
+        .animation(.easeOut(duration: 0.08), value: hovered)
+    }
+
+    // MARK: Cells
+
+    @ViewBuilder
+    private func cell(for column: PortColumn) -> some View {
+        switch column {
+        case .health:
             Circle()
                 .fill(healthColor)
                 .frame(width: 7, height: 7)
-                .frame(width: Col.health, alignment: .center)
 
-            // PORT
+        case .port:
             Text(":" + String(entry.port))
                 .font(.system(.body, design: .monospaced).weight(.semibold))
-                .frame(width: Col.port, alignment: .leading)
-                .padding(.leading, 8)
 
-            // PROCESS — full path; column grows with the panel width. Hover = tooltip.
+        case .process:
+            // Full path; column grows with the panel width. Hover = tooltip.
             Text(entry.processName)
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .frame(minWidth: Col.processMin, maxWidth: .infinity, alignment: .leading)
                 .onHover { hoverProcess = $0 }
                 .overlay(alignment: .topLeading) {
                     if hoverProcess { HoverPathBubble(text: entry.processName) }
                 }
 
-            // TYPE
+        case .type:
             Text(label)
                 .lineLimit(1)
-                .frame(width: Col.type, alignment: .leading)
 
-            // PROJECT
+        case .project:
             Text(entry.projectName ?? "—")
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .frame(width: Col.project, alignment: .leading)
                 .onHover { hoverProject = $0 }
                 .overlay(alignment: .topLeading) {
                     if hoverProject, let p = entry.projectPath ?? entry.projectName {
@@ -465,14 +455,12 @@ struct PortPopoverRow: View {
                     }
                 }
 
-            // UP
+        case .uptime:
             Text(formatUptime(entry.uptime))
                 .foregroundStyle(.tertiary)
                 .font(.caption.monospacedDigit())
-                .frame(width: Col.uptime, alignment: .trailing)
-                .padding(.trailing, 10)
 
-            // Actions
+        case .tools:
             HStack(spacing: 4) {
                 // LAN-exposure marker: other devices can reach this port.
                 if entry.bindScope == .exposed {
@@ -494,14 +482,7 @@ struct PortPopoverRow: View {
                     Task { await ProcessKiller.kill(entry: entry, watchService: watchService) }
                 }
             }
-            .frame(width: 104, alignment: .trailing)
         }
-        .padding(.leading, 14)
-        .padding(.trailing, 26)   // clear the scroll bar gutter so ✕ isn't covered
-        .padding(.vertical, 6)
-        .background(hovered ? Color(NSColor.selectedContentBackgroundColor).opacity(0.1) : Color.clear)
-        .onHover { hovered = $0 }
-        .animation(.easeOut(duration: 0.08), value: hovered)
     }
 
     // MARK: Helpers
