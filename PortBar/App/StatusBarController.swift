@@ -78,6 +78,9 @@ class StatusBarController: NSObject, NSPopoverDelegate {
                 let vf = (win.screen ?? NSScreen.main)?.visibleFrame ?? onScreen
                 let room = min(onScreen.midX - vf.minX, vf.maxX - onScreen.midX)
                 PortBarSettings.shared.maxPopoverWidth = max(480, room * 2 - 16)
+                // Everything below the icon, less a margin so the popover never
+                // reaches the bottom edge of the screen.
+                PortBarSettings.shared.maxPopoverHeight = max(360, onScreen.minY - vf.minY - 24)
             }
             popover?.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
             installDismissMonitors()

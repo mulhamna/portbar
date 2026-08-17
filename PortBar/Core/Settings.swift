@@ -51,6 +51,10 @@ final class PortBarSettings: ObservableObject {
     // off-screen near the menu bar edge.
     @Published var maxPopoverWidth: CGFloat = .greatestFiniteMagnitude
 
+    // Same deal for height: the settings panel is tall enough to push the toolbar off
+    // the top of the display, so it needs to know what the screen actually allows.
+    @Published var maxPopoverHeight: CGFloat = 720
+
     @Published var popoverListHeight: CGFloat = {
         let v = CGFloat(UserDefaults.standard.double(forKey: "pb.popoverListHeight"))
         let d = v > 0 ? v : 400

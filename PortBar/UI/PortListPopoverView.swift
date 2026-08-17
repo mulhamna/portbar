@@ -24,11 +24,9 @@ struct PortListPopoverView: View {
                 // layout editor is open, and an uncapped one pushes the toolbar — and
                 // with it the gear that closes this panel — off the top of the display.
                 ScrollView { settingsPanel }
-                    .frame(maxHeight: 320)
+                    .frame(maxHeight: settingsPanelMaxHeight)
                 Divider()
             }
-            Divider()
-            columnHeader
             Divider()
             portList
             Divider()
@@ -36,6 +34,14 @@ struct PortListPopoverView: View {
         }
         .frame(width: min(settings.popoverWidth, settings.maxPopoverWidth))
         .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    // Room left for the settings panel once the toolbar, a short port list and the
+    // footer have taken theirs. Floored so the editor stays usable on a small screen
+    // — it scrolls anyway, but a 100pt window into it is not worth showing.
+    private var settingsPanelMaxHeight: CGFloat {
+        let chrome: CGFloat = 44 + 150 + 30   // toolbar + capped list + footer
+        return max(300, settings.maxPopoverHeight - chrome)
     }
 
     // MARK: Toolbar
@@ -324,10 +330,19 @@ struct PortListPopoverView: View {
                     .padding(40)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(orderedPorts) { entry in
-                            PortPopoverRow(entry: entry, groupColor: groupColor(for: entry), watchService: watchService)
-                            Divider().padding(.leading, 14)
+                    // The header is pinned *inside* the scroll view on purpose. Laid
+                    // out beside it, the header and the rows sat in two different
+                    // layout contexts: the scroller's gutter narrowed the rows but not
+                    // the header, the flexible PROCESS column absorbed the difference,
+                    // and every column after it drifted out of line.
+                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        Section {
+                            ForEach(orderedPorts) { entry in
+                                PortPopoverRow(entry: entry, groupColor: groupColor(for: entry), watchService: watchService)
+                                Divider().padding(.leading, 14)
+                            }
+                        } header: {
+                            columnHeader
                         }
                     }
                     .animation(.easeInOut(duration: 0.18), value: orderedPorts.map { $0.id })
@@ -336,7 +351,7 @@ struct PortListPopoverView: View {
                 // whole does not — so the list yields room while settings are open
                 // rather than letting the two together outgrow the screen.
                 .frame(maxHeight: showSettings
-                       ? min(settings.popoverListHeight, 220)
+                       ? min(settings.popoverListHeight, 150)
                        : settings.popoverListHeight)
             }
         }

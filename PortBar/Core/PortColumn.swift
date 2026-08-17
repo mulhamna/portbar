@@ -83,7 +83,10 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
         case .memoryPercent: return .fixed(58)
         case .pid:     return .fixed(56)
         case .uptime:  return .fixed(56)    // 2h 4m
-        case .tools:   return .fixed(104)
+        // 112 = 18 (LAN marker) + 30 (browser slot) + 26 + 26 (copy, kill) + 3*4
+        // spacing. At the old 104 the buttons overflowed their own frame and spilled
+        // left of the TOOLS header.
+        case .tools:   return .fixed(112)
         }
     }
 
