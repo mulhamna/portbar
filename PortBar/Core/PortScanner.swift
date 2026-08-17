@@ -17,7 +17,10 @@ actor PortScanner {
         let pidList = pids.map(String.init).joined(separator: ",")
 
         // Call 2 + 3: Run in parallel — they're independent
-        async let psTask   = shell("ps -o pid=,comm=,ppid=,stat=,etime= -p \(pidList) 2>/dev/null")
+        // comm= goes last on purpose: it's a full executable path and can contain
+        // spaces, so any field after it would be misparsed. Keeping it at the tail
+        // lets the parser treat "everything left" as the name.
+        async let psTask   = shell("ps -o pid=,ppid=,stat=,%cpu=,rss=,%mem=,etime=,comm= -p \(pidList) 2>/dev/null")
         async let cwdTask  = shell("lsof -d cwd -a -p \(pidList) -Fn 2>/dev/null")
         let (psOutput, cwdOutput) = try await (psTask, cwdTask)
 
@@ -91,7 +94,10 @@ actor PortScanner {
                 health: health,
                 bindScope: bindScope,
                 isDockerContainer: isDocker,
-                dockerContainerName: dockerName
+                dockerContainerName: dockerName,
+                cpuPercent: isDocker ? nil : info?.cpu,
+                memoryRSS: isDocker ? nil : info?.rss,
+                memoryPercent: isDocker ? nil : info?.memPercent
             ))
         }
 
@@ -122,27 +128,36 @@ actor PortScanner {
         return localHosts.contains(host) ? .localOnly : .exposed
     }
 
-    private struct ProcessInfo {
+    struct ProcessInfo {
         let name: String
         let ppid: Int
         let stat: String
         let etime: String
+        let cpu: Double
+        let rss: Int          // kilobytes
+        let memPercent: Double
     }
 
-    private func parsePs(_ output: String) -> [Int: ProcessInfo] {
+    // Field order must match the ps -o format in scan():
+    //   pid ppid stat %cpu rss %mem etime comm
+    // comm is last and takes the rest of the line, spaces included.
+    nonisolated func parsePs(_ output: String) -> [Int: ProcessInfo] {
         var result: [Int: ProcessInfo] = [:]
         for line in output.components(separatedBy: "\n") {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { continue }
-            let parts = trimmed.split(separator: " ", maxSplits: 4, omittingEmptySubsequences: true)
-            guard parts.count >= 5,
+            let parts = trimmed.split(separator: " ", maxSplits: 7, omittingEmptySubsequences: true)
+            guard parts.count >= 8,
                   let pid = Int(parts[0]),
-                  let ppid = Int(parts[2]) else { continue }
+                  let ppid = Int(parts[1]) else { continue }
             result[pid] = ProcessInfo(
-                name: String(parts[1]),
+                name: String(parts[7]).trimmingCharacters(in: .whitespaces),
                 ppid: ppid,
-                stat: String(parts[3]),
-                etime: String(parts[4]).trimmingCharacters(in: .whitespaces)
+                stat: String(parts[2]),
+                etime: String(parts[6]),
+                cpu: Double(parts[3]) ?? 0,
+                rss: Int(parts[4]) ?? 0,
+                memPercent: Double(parts[5]) ?? 0
             )
         }
         return result

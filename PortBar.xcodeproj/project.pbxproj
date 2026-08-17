@@ -19,6 +19,7 @@
 		AA000040000000000000AABB /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000041000000000000AABB /* Settings.swift */; };
 		AA000044000000000000AABB /* PortListPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000045000000000000AABB /* PortListPopoverView.swift */; };
 		AA000046000000000000AABB /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000047000000000000AABB /* UpdateChecker.swift */; };
+		AA000050000000000000AABB /* SelfCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000051000000000000AABB /* SelfCheck.swift */; };
 		AA00003C000000000000AABB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00002C000000000000AABB /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -33,6 +34,7 @@
 		AA000027000000000000AABB /* ProcessKiller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessKiller.swift; sourceTree = "<group>"; };
 		AA000028000000000000AABB /* WatchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchService.swift; sourceTree = "<group>"; };
 		AA000041000000000000AABB /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		AA000051000000000000AABB /* SelfCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfCheck.swift; sourceTree = "<group>"; };
 		AA000045000000000000AABB /* PortListPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortListPopoverView.swift; sourceTree = "<group>"; };
 		AA000047000000000000AABB /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		AA00002C000000000000AABB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -84,6 +86,7 @@
 		AA000013000000000000AABB /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				AA000051000000000000AABB /* SelfCheck.swift */,
 				AA000023000000000000AABB /* Models.swift */,
 				AA000024000000000000AABB /* ShellRunner.swift */,
 				AA000025000000000000AABB /* PortScanner.swift */,
@@ -203,6 +206,7 @@
 				AA000040000000000000AABB /* Settings.swift in Sources */,
 				AA000044000000000000AABB /* PortListPopoverView.swift in Sources */,
 				AA000046000000000000AABB /* UpdateChecker.swift in Sources */,
+				AA000050000000000000AABB /* SelfCheck.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
