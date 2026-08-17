@@ -455,6 +455,37 @@ struct PortPopoverRow: View {
                     }
                 }
 
+        case .cpu:
+            // ps reports a decaying average over roughly the last minute, and a
+            // multi-threaded process can exceed 100 — clamp so the bar stays sane.
+            MetricBar(
+                fraction: entry.cpuPercent.map { min($0, 100) / 100 },
+                text: entry.cpuPercent.map { String(format: "%.1f%%", $0) },
+                tint: loadTint(entry.cpuPercent, warn: 50, alarm: 85)
+            )
+            .help("CPU — average over roughly the last minute")
+
+        case .memory:
+            // Bar tracks %MEM because RSS on its own has no sensible ceiling.
+            MetricBar(
+                fraction: entry.memoryPercent.map { min($0, 100) / 100 },
+                text: entry.memoryRSS.map(formatMemory),
+                tint: loadTint(entry.memoryPercent, warn: 5, alarm: 15)
+            )
+
+        case .memoryPercent:
+            MetricBar(
+                fraction: entry.memoryPercent.map { min($0, 100) / 100 },
+                text: entry.memoryPercent.map { String(format: "%.1f%%", $0) },
+                tint: loadTint(entry.memoryPercent, warn: 5, alarm: 15)
+            )
+
+        case .pid:
+            Text(String(entry.pid))
+                .foregroundStyle(.tertiary)
+                .font(.caption.monospacedDigit())
+                .textSelection(.enabled)
+
         case .uptime:
             Text(formatUptime(entry.uptime))
                 .foregroundStyle(.tertiary)
@@ -507,6 +538,45 @@ struct PortPopoverRow: View {
     private func copyPort() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(":" + String(entry.port), forType: .string)
+    }
+
+    private func loadTint(_ value: Double?, warn: Double, alarm: Double) -> Color {
+        guard let value else { return .secondary }
+        if value >= alarm { return .red }
+        if value >= warn  { return .orange }
+        return .green
+    }
+}
+
+// MARK: - Metric bar
+
+// A number with its own scale behind it, so a busy port is visible while scanning
+// the list instead of requiring the reader to compare digits.
+struct MetricBar: View {
+    let fraction: Double?   // 0…1, nil when the metric doesn't apply (Docker rows)
+    let text: String?
+    let tint: Color
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            if let fraction {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.primary.opacity(0.06))
+                        Capsule()
+                            .fill(tint.opacity(0.30))
+                            // A live-but-idle process should still show a sliver.
+                            .frame(width: max(2, geo.size.width * fraction))
+                    }
+                }
+            }
+            Text(text ?? "—")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(text == nil ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.secondary))
+                .lineLimit(1)
+                .padding(.horizontal, 4)
+        }
+        .frame(height: 15)
     }
 }
 

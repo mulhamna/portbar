@@ -9,6 +9,10 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
     case process
     case type
     case project
+    case cpu
+    case memory
+    case memoryPercent
+    case pid
     case uptime
     case tools
 
@@ -22,6 +26,7 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
     // Palette sections in the layout editor.
     enum Group: String, CaseIterable {
         case identity = "Identity"
+        case resource = "Usage"
         case meta     = "Meta"
     }
 
@@ -32,6 +37,10 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
         case .process: return "PROCESS"
         case .type:    return "TYPE"
         case .project: return "PROJECT"
+        case .cpu:     return "CPU"
+        case .memory:  return "MEM"
+        case .memoryPercent: return "%MEM"
+        case .pid:     return "PID"
         case .uptime:  return "UPTIME"
         case .tools:   return "TOOLS"
         }
@@ -45,6 +54,10 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
         case .process: return "terminal"
         case .type:    return "shippingbox"
         case .project: return "folder"
+        case .cpu:     return "cpu"
+        case .memory:  return "memorychip"
+        case .memoryPercent: return "chart.bar"
+        case .pid:     return "number.square"
         case .uptime:  return "clock"
         case .tools:   return "wrench.and.screwdriver"
         }
@@ -53,7 +66,8 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
     var group: Group {
         switch self {
         case .health, .port, .process, .type, .project: return .identity
-        case .uptime, .tools:                           return .meta
+        case .cpu, .memory, .memoryPercent:             return .resource
+        case .pid, .uptime, .tools:                     return .meta
         }
     }
 
@@ -64,6 +78,10 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
         case .process: return .flexible(min: 90)   // grows with the panel so full paths show
         case .type:    return .fixed(90)    // Next.js, Vite …
         case .project: return .fixed(120)
+        case .cpu:     return .fixed(62)    // bar + "12.8%"
+        case .memory:  return .fixed(72)    // bar + "1.2 GB"
+        case .memoryPercent: return .fixed(58)
+        case .pid:     return .fixed(56)
         case .uptime:  return .fixed(56)    // 2h 4m
         case .tools:   return .fixed(104)
         }
@@ -76,7 +94,7 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
     var headerAlignment: Alignment {
         switch self {
         case .health, .port, .tools: return .center
-        case .uptime:                return .trailing
+        case .uptime, .pid, .cpu, .memory, .memoryPercent: return .trailing
         default:                     return .leading
         }
     }
@@ -84,7 +102,8 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
     var cellAlignment: Alignment {
         switch self {
         case .health:  return .center
-        case .uptime:  return .trailing
+        case .uptime, .pid: return .trailing
+        case .cpu, .memory, .memoryPercent: return .trailing
         case .tools:   return .trailing
         default:       return .leading
         }
