@@ -148,6 +148,11 @@ final class SettingsWindowController {
             w.contentViewController = NSHostingController(
                 rootView: SettingsView(watchService: watchService)
             )
+            // NSHostingController sizes the window to the content's *ideal* width,
+            // which the chip row and the one-line brew command push past 1000pt and
+            // leaves the toggles stranded either side of a lot of nothing. The
+            // content only needs enough room for the preview row's columns.
+            w.setContentSize(NSSize(width: 620, height: 600))
             w.isReleasedWhenClosed = false   // reopened later; releasing would dangle
             w.center()
             window = w
