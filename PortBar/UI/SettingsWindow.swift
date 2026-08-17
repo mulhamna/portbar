@@ -98,21 +98,46 @@ struct SettingsView: View {
 
             Divider().padding(.horizontal, 14)
 
-            HStack {
+            HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Version")
                         .font(.caption.weight(.medium))
-                    if updater.hasUpdate, let latest = updater.latestVersion {
-                        Text("v\(latest) available — run: brew update && brew upgrade --cask portbar")
-                            .font(.caption2)
-                            .foregroundStyle(Color.orange)
-                    } else {
-                        Text("Up to date")
+                    switch updater.state {
+                    case .running:
+                        Text("Upgrading the cask — PortBar will restart when it finishes")
                             .font(.caption2)
                             .foregroundStyle(Color.secondary)
+                    case .failed(let message):
+                        Text(message)
+                            .font(.caption2)
+                            .foregroundStyle(Color.red)
+                            .lineLimit(4)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    case .idle:
+                        if updater.hasUpdate, let latest = updater.latestVersion {
+                            Text("v\(latest) available")
+                                .font(.caption2)
+                                .foregroundStyle(Color.orange)
+                        } else {
+                            Text("Up to date")
+                                .font(.caption2)
+                                .foregroundStyle(Color.secondary)
+                        }
                     }
                 }
                 Spacer()
+                if updater.hasUpdate {
+                    if updater.state == .running {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Button(updater.state == .idle ? "Update & Restart" : "Try Again") {
+                            Task { await updater.updateAndRestart() }
+                        }
+                        .controlSize(.small)
+                    }
+                }
                 Text("v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(Color.secondary)
