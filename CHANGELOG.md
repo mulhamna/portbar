@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.3.0](https://github.com/mulhamna/portbar/compare/v3.2.0...v3.3.0) (2026-08-17)
+
+
+### Features
+
+* add cpu, memory and pid columns to the port list ([965d0c5](https://github.com/mulhamna/portbar/commit/965d0c5ae9df9f2fd6723507383d720c0bffc60a))
+* let users compose the port row layout ([69b56cb](https://github.com/mulhamna/portbar/commit/69b56cb6314a472cf6598ca7b707d7af60a2c3bc))
+* sample cpu and memory per listening process ([119efea](https://github.com/mulhamna/portbar/commit/119efea0276b94715acbace2b753f77c8a8e4eaf))
+* upgrade and relaunch from the settings window ([b6198e9](https://github.com/mulhamna/portbar/commit/b6198e9dced45b7913b7ad277f643fa8b299b9f9))
+
+
+### Bug Fixes
+
+* align the column header with its rows and give the editor room ([9b4a7e9](https://github.com/mulhamna/portbar/commit/9b4a7e953481e92adc638ff1ef55e172033026b7))
+* give every column its own gutter so neighbours stop touching ([5453c65](https://github.com/mulhamna/portbar/commit/5453c65f3e126f81f037e9e2e88f84b42cd62d01))
+* keep the popover on screen and size metric bars to their column ([4047a83](https://github.com/mulhamna/portbar/commit/4047a831597435faa653b3c9f33f459c5723070d))
+* never render the popover narrower than its columns need ([c521fa0](https://github.com/mulhamna/portbar/commit/c521fa0df77f3760bbaeefbf114ad6fcc4d7143d))
+* pin the settings panel height so the editor gets its space ([98f4b08](https://github.com/mulhamna/portbar/commit/98f4b089239d1557350637ccb083d7115174c3ac))
+* render versions with all three semver components ([4cd6777](https://github.com/mulhamna/portbar/commit/4cd67772eb6e7d6a51f1b5578f0d9cecbf0d8ebe))
+* size the settings panel to its content instead of a constant ([0442dd6](https://github.com/mulhamna/portbar/commit/0442dd6c5b6dbe54c20dbab4f62705df30918946))
+* size the settings window to what its content measures ([c4ff9ce](https://github.com/mulhamna/portbar/commit/c4ff9ce9eca1e4c0292ab873c70d9baca24ca0f1))
+* stop the settings window opening a thousand points wide ([ff1ead0](https://github.com/mulhamna/portbar/commit/ff1ead0408f6908d7c3450c2f8cab3c38a7587c4))
+
 ## [3.2.0](https://github.com/mulhamna/portbar/compare/v3.1.4...v3.2.0) (2026-08-11)
 
 
