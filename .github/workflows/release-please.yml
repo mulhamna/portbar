@@ -3,6 +3,17 @@ name: Release
 on:
   push:
     branches: [main]
+  # Recovery path. release-please creates the GitHub release before it finishes,
+  # so a transient API failure after that point leaves a published release whose
+  # build job never ran — and re-running cannot help, because release-please then
+  # sees the release already exists and reports nothing created. This lets the
+  # build and publish steps be pointed at an existing tag on their own.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to build and publish, e.g. v3.3.0"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -11,6 +22,9 @@ permissions:
 jobs:
   release-please:
     name: Release PR / tag
+    # A manual run is for republishing a tag that already exists; it must not
+    # open or merge anything.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
@@ -25,13 +39,20 @@ jobs:
   release-build:
     name: Build DMG + publish
     needs: release-please
-    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    # `!cancelled()` is required: on a manual run release-please is skipped, and a
+    # dependent job whose `needs` was skipped is skipped too unless the condition
+    # tolerates it. A push whose release-please failed still evaluates to false
+    # here, so a broken release never publishes by accident.
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.release-please.outputs.releases_created == 'true') }}
     runs-on: macos-15
     env:
-      TAG: ${{ needs.release-please.outputs.tag_name }}
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || needs.release-please.outputs.tag_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Build the tagged source, not whatever main has moved on to since.
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.sha }}
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.app
@@ -80,5 +101,11 @@ jobs:
           sed -i '' -E "s/sha256 \"[^\"]+\"/sha256 \"$SHA\"/" Casks/portbar.rb
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore: portbar $VERSION"
-          git push
+          # A recovery run may find the cask already correct; committing nothing
+          # is an error to git, but not to us.
+          if git diff --quiet; then
+            echo "Cask already at $VERSION — nothing to push."
+          else
+            git commit -am "chore: portbar $VERSION"
+            git push
+          fi
