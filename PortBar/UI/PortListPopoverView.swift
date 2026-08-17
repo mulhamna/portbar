@@ -5,6 +5,14 @@ import UserNotifications
 // Column widths and alignment live in PortColumn — the header and the row both
 // iterate settings.columns so they can't drift apart.
 
+// Reports the settings panel's natural height so the popover can size to it.
+private struct SettingsHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 // MARK: - Root
 
 struct PortListPopoverView: View {
@@ -15,25 +23,28 @@ struct PortListPopoverView: View {
     @State private var searchText = ""
     @State private var dragBaseWidth: CGFloat?
     @State private var dragBaseHeight: CGFloat?
+    @State private var settingsContentHeight: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
             toolbar
-            if showSettings {
-                // Capped and scrollable: the panel is taller than the screen once the
-                // layout editor is open, and an uncapped one pushes the toolbar — and
-                // with it the gear that closes this panel — off the top of the display.
-                // A fixed height, not a cap. Two flexible ScrollViews in one VStack
-                // leave the popover with no intrinsic height to size itself from, so
-                // SwiftUI squeezes both — which is how the editor ended up peering
-                // through a 120pt slot on a 1440pt display. Pinning this one down
-                // makes the popover's height deterministic again.
-                ScrollView { settingsPanel }
-                    .frame(height: settingsPanelHeight)
-                Divider()
-            }
             Divider()
-            portList
+            // Settings replace the list rather than stacking above it. Two flexible
+            // ScrollViews in one VStack give the popover no intrinsic height to size
+            // itself from, and SwiftUI resolves that by squeezing both; only one is
+            // ever on screen now, so the height is unambiguous.
+            if showSettings {
+                ScrollView {
+                    settingsPanel
+                        .background(GeometryReader { geo in
+                            Color.clear.preference(key: SettingsHeightKey.self, value: geo.size.height)
+                        })
+                }
+                .frame(height: settingsPanelHeight)
+                .onPreferenceChange(SettingsHeightKey.self) { settingsContentHeight = $0 }
+            } else {
+                portList
+            }
             Divider()
             footer
         }
@@ -41,12 +52,15 @@ struct PortListPopoverView: View {
         .background(Color(NSColor.windowBackgroundColor))
     }
 
-    // Tall enough to show the whole panel without scrolling on a normal display —
-    // roughly the four toggles, the layout editor and the version row — but never
-    // more than the screen below the menu bar icon can actually hold.
+    // The panel's own measured height, so it neither leaves dead space below the
+    // version row nor grows past what the screen can show. Guessed constants gave
+    // one or the other every time.
     private var settingsPanelHeight: CGFloat {
-        let chrome: CGFloat = 44 + 150 + 30   // toolbar + capped list + footer
-        return min(600, max(240, settings.maxPopoverHeight - chrome))
+        let chrome: CGFloat = 44 + 30   // toolbar + footer
+        let available = max(240, settings.maxPopoverHeight - chrome)
+        // 320 until the first measurement lands, so the panel never opens collapsed.
+        let content = settingsContentHeight > 0 ? settingsContentHeight : 320
+        return min(content, available)
     }
 
     // MARK: Toolbar
@@ -352,12 +366,7 @@ struct PortListPopoverView: View {
                     }
                     .animation(.easeInOut(duration: 0.18), value: orderedPorts.map { $0.id })
                 }
-                // The settings panel and the list both scroll, but the popover as a
-                // whole does not — so the list yields room while settings are open
-                // rather than letting the two together outgrow the screen.
-                .frame(maxHeight: showSettings
-                       ? min(settings.popoverListHeight, 150)
-                       : settings.popoverListHeight)
+                .frame(maxHeight: settings.popoverListHeight)
             }
         }
     }
