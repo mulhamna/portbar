@@ -117,7 +117,7 @@ struct SettingsView: View {
                             .textSelection(.enabled)
                     case .idle:
                         if updater.hasUpdate, let latest = updater.latestVersion {
-                            Text("v\(latest) available")
+                            Text("v\(formatVersion(latest)) available")
                                 .font(.caption2)
                                 .foregroundStyle(Color.orange)
                         } else {
@@ -139,7 +139,7 @@ struct SettingsView: View {
                         .controlSize(.small)
                     }
                 }
-                Text("v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"))
+                Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"].flatMap { $0 as? String }.map { "v" + formatVersion($0) } ?? "—")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(Color.secondary)
             }

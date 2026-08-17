@@ -69,6 +69,18 @@ struct PortEntry: Identifiable {
     let memoryPercent: Double?
 }
 
+// Pads a version to the three components semver calls for. MARKETING_VERSION is
+// stored as "3.0", which renders as a version that looks truncated next to a
+// release tagged "3.2.0". Anything after the numbers (a "-beta" suffix) is kept.
+func formatVersion(_ version: String) -> String {
+    let head = version.prefix { $0.isNumber || $0 == "." }
+    let suffix = version.dropFirst(head.count)
+    var parts = head.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
+    guard !parts.isEmpty, parts.allSatisfy({ !$0.isEmpty }) else { return version }
+    while parts.count < 3 { parts.append("0") }
+    return parts.joined(separator: ".") + suffix
+}
+
 // Human-readable RSS. ps reports kilobytes.
 func formatMemory(_ kilobytes: Int) -> String {
     if kilobytes < 1024 { return "\(kilobytes) KB" }

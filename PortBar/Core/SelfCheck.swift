@@ -8,6 +8,21 @@ enum SelfCheck {
     static func run() {
         checkParsePs()
         checkColumnSanitizing()
+        checkVersionFormatting()
+    }
+
+    private static func checkVersionFormatting() {
+        assert(formatVersion("3.0") == "3.0.0")
+        assert(formatVersion("3") == "3.0.0")
+        assert(formatVersion("3.2.0") == "3.2.0")
+        // Already longer than semver — left alone rather than truncated.
+        assert(formatVersion("3.2.0.1") == "3.2.0.1")
+        // Suffixes survive the padding.
+        assert(formatVersion("3.1-beta") == "3.1.0-beta", formatVersion("3.1-beta"))
+        // Nothing numeric to work with: passed through untouched.
+        assert(formatVersion("") == "")
+        assert(formatVersion("dev") == "dev")
+        assert(formatVersion("3..1") == "3..1")
     }
 
     private static func checkColumnSanitizing() {
