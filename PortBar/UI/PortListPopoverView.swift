@@ -5,46 +5,21 @@ import UserNotifications
 // Column widths and alignment live in PortColumn — the header and the row both
 // iterate settings.columns so they can't drift apart.
 
-// Reports the settings panel's natural height so the popover can size to it.
-private struct SettingsHeightKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
-
 // MARK: - Root
 
 struct PortListPopoverView: View {
     @ObservedObject var watchService: WatchService
     @ObservedObject private var settings = PortBarSettings.shared
     @ObservedObject private var updater = UpdateChecker.shared
-    @State private var showSettings = false
     @State private var searchText = ""
     @State private var dragBaseWidth: CGFloat?
     @State private var dragBaseHeight: CGFloat?
-    @State private var settingsContentHeight: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
             toolbar
             Divider()
-            // Settings replace the list rather than stacking above it. Two flexible
-            // ScrollViews in one VStack give the popover no intrinsic height to size
-            // itself from, and SwiftUI resolves that by squeezing both; only one is
-            // ever on screen now, so the height is unambiguous.
-            if showSettings {
-                ScrollView {
-                    settingsPanel
-                        .background(GeometryReader { geo in
-                            Color.clear.preference(key: SettingsHeightKey.self, value: geo.size.height)
-                        })
-                }
-                .frame(height: settingsPanelHeight)
-                .onPreferenceChange(SettingsHeightKey.self) { settingsContentHeight = $0 }
-            } else {
-                portList
-            }
+            portList
             Divider()
             footer
         }
@@ -52,16 +27,6 @@ struct PortListPopoverView: View {
         .background(Color(NSColor.windowBackgroundColor))
     }
 
-    // The panel's own measured height, so it neither leaves dead space below the
-    // version row nor grows past what the screen can show. Guessed constants gave
-    // one or the other every time.
-    private var settingsPanelHeight: CGFloat {
-        let chrome: CGFloat = 44 + 30   // toolbar + footer
-        let available = max(240, settings.maxPopoverHeight - chrome)
-        // 320 until the first measurement lands, so the panel never opens collapsed.
-        let content = settingsContentHeight > 0 ? settingsContentHeight : 320
-        return min(content, available)
-    }
 
     // MARK: Toolbar
 
@@ -123,12 +88,12 @@ struct PortListPopoverView: View {
             .buttonStyle(.plain)
 
             Button {
-                withAnimation(.easeInOut(duration: 0.15)) { showSettings.toggle() }
+                SettingsWindowController.shared.show(watchService: watchService)
             } label: {
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: showSettings ? "gearshape.fill" : "gearshape")
+                    Image(systemName: "gearshape")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(showSettings ? Color.accentColor : Color.secondary)
+                        .foregroundStyle(Color.secondary)
                     if updater.hasUpdate {
                         Circle()
                             .fill(Color.orange)
@@ -150,125 +115,6 @@ struct PortListPopoverView: View {
 
     // MARK: Settings panel
 
-    private var settingsPanel: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("SETTINGS")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 14)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Auto Watch")
-                        .font(.caption.weight(.medium))
-                    Text("Automatically refresh ports every 3s on launch")
-                        .font(.caption2)
-                        .foregroundStyle(Color.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $settings.autoWatch)
-                    .labelsHidden()
-                    .onChange(of: settings.autoWatch) { newValue in
-                        if newValue && !watchService.isWatching { watchService.startWatching() }
-                        else if !newValue && watchService.isWatching { watchService.stopWatching() }
-                    }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-
-            Divider().padding(.horizontal, 14)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Show Port Count")
-                        .font(.caption.weight(.medium))
-                    Text("Show the number next to ⚡ in the menu bar")
-                        .font(.caption2)
-                        .foregroundStyle(Color.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $settings.showCount)
-                    .labelsHidden()
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-
-            Divider().padding(.horizontal, 14)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Notify on New Port")
-                        .font(.caption.weight(.medium))
-                    Text("Banner when a new port opens while watching")
-                        .font(.caption2)
-                        .foregroundStyle(Color.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $settings.notifyOnNewPort)
-                    .labelsHidden()
-                    .onChange(of: settings.notifyOnNewPort) { on in
-                        if on {
-                            UNUserNotificationCenter.current()
-                                .requestAuthorization(options: [.alert, .sound]) { _, _ in }
-                        }
-                    }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-
-            Divider().padding(.horizontal, 14)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Show All Ports by Default")
-                        .font(.caption.weight(.medium))
-                    Text("Include system & tool processes on launch")
-                        .font(.caption2)
-                        .foregroundStyle(Color.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $settings.defaultShowAll)
-                    .labelsHidden()
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-
-            Divider().padding(.horizontal, 14)
-
-            ColumnLayoutEditor(watchService: watchService)
-
-            Divider().padding(.horizontal, 14)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Version")
-                        .font(.caption.weight(.medium))
-                    if updater.hasUpdate, let latest = updater.latestVersion {
-                        Text("v\(latest) available — run: brew update && brew upgrade --cask portbar")
-                            .font(.caption2)
-                            .foregroundStyle(Color.orange)
-                    } else {
-                        Text("Up to date")
-                            .font(.caption2)
-                            .foregroundStyle(Color.secondary)
-                    }
-                }
-                Spacer()
-                Text("v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(Color.secondary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-            .padding(.bottom, 4)
-        }
-        .background(Color(NSColor.controlBackgroundColor))
-    }
 
     // MARK: Column header
 
