@@ -7,6 +7,29 @@ import Foundation
 enum SelfCheck {
     static func run() {
         checkParsePs()
+        checkColumnSanitizing()
+    }
+
+    private static func checkColumnSanitizing() {
+        // No stored layout, or an empty one, falls back to the shipped default.
+        assert(PortColumn.sanitized(nil) == PortColumn.defaultLayout)
+        assert(PortColumn.sanitized([]) == PortColumn.defaultLayout)
+
+        // A downgrade sees raw values this build doesn't know — drop them, keep order.
+        assert(PortColumn.sanitized(["port", "gpu", "process", "tools"])
+               == [.port, .process, .tools])
+
+        // Nothing recognisable at all is treated as no layout.
+        assert(PortColumn.sanitized(["gpu", "nonsense"]) == PortColumn.defaultLayout)
+
+        // Duplicates collapse to their first position.
+        assert(PortColumn.sanitized(["port", "process", "port", "tools"])
+               == [.port, .process, .tools])
+
+        // A hand-edited default that dropped the locked columns gets them back.
+        let repaired = PortColumn.sanitized(["process", "uptime"])
+        assert(repaired.contains(.port) && repaired.contains(.tools),
+               "locked columns not restored: \(repaired)")
     }
 
     private static func checkParsePs() {

@@ -208,6 +208,10 @@ struct PortListPopoverView: View {
 
             Divider().padding(.horizontal, 14)
 
+            ColumnLayoutEditor(watchService: watchService)
+
+            Divider().padding(.horizontal, 14)
+
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Version")
