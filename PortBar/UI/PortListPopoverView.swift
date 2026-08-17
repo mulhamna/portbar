@@ -23,8 +23,13 @@ struct PortListPopoverView: View {
                 // Capped and scrollable: the panel is taller than the screen once the
                 // layout editor is open, and an uncapped one pushes the toolbar — and
                 // with it the gear that closes this panel — off the top of the display.
+                // A fixed height, not a cap. Two flexible ScrollViews in one VStack
+                // leave the popover with no intrinsic height to size itself from, so
+                // SwiftUI squeezes both — which is how the editor ended up peering
+                // through a 120pt slot on a 1440pt display. Pinning this one down
+                // makes the popover's height deterministic again.
                 ScrollView { settingsPanel }
-                    .frame(maxHeight: settingsPanelMaxHeight)
+                    .frame(height: settingsPanelHeight)
                 Divider()
             }
             Divider()
@@ -36,12 +41,12 @@ struct PortListPopoverView: View {
         .background(Color(NSColor.windowBackgroundColor))
     }
 
-    // Room left for the settings panel once the toolbar, a short port list and the
-    // footer have taken theirs. Floored so the editor stays usable on a small screen
-    // — it scrolls anyway, but a 100pt window into it is not worth showing.
-    private var settingsPanelMaxHeight: CGFloat {
+    // Tall enough to show the whole panel without scrolling on a normal display —
+    // roughly the four toggles, the layout editor and the version row — but never
+    // more than the screen below the menu bar icon can actually hold.
+    private var settingsPanelHeight: CGFloat {
         let chrome: CGFloat = 44 + 150 + 30   // toolbar + capped list + footer
-        return max(300, settings.maxPopoverHeight - chrome)
+        return min(600, max(240, settings.maxPopoverHeight - chrome))
     }
 
     // MARK: Toolbar
