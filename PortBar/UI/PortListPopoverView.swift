@@ -19,7 +19,14 @@ struct PortListPopoverView: View {
     var body: some View {
         VStack(spacing: 0) {
             toolbar
-            if showSettings { settingsPanel; Divider() }
+            if showSettings {
+                // Capped and scrollable: the panel is taller than the screen once the
+                // layout editor is open, and an uncapped one pushes the toolbar — and
+                // with it the gear that closes this panel — off the top of the display.
+                ScrollView { settingsPanel }
+                    .frame(maxHeight: 320)
+                Divider()
+            }
             Divider()
             columnHeader
             Divider()
@@ -325,7 +332,12 @@ struct PortListPopoverView: View {
                     }
                     .animation(.easeInOut(duration: 0.18), value: orderedPorts.map { $0.id })
                 }
-                .frame(maxHeight: settings.popoverListHeight)
+                // The settings panel and the list both scroll, but the popover as a
+                // whole does not — so the list yields room while settings are open
+                // rather than letting the two together outgrow the screen.
+                .frame(maxHeight: showSettings
+                       ? min(settings.popoverListHeight, 220)
+                       : settings.popoverListHeight)
             }
         }
     }
@@ -581,6 +593,11 @@ struct MetricBar: View {
                 .padding(.horizontal, 4)
         }
         .frame(height: 15)
+        // GeometryReader has no intrinsic width, so without this the ZStack collapses
+        // to the width of its Text and the bar renders narrower than its column —
+        // making each row's bar a different length and pulling the number off the
+        // header above it.
+        .frame(maxWidth: .infinity)
     }
 }
 
