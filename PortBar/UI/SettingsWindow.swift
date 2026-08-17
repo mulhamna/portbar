@@ -13,8 +13,9 @@ struct SettingsView: View {
     @ObservedObject private var updater = UpdateChecker.shared
     @ObservedObject var watchService: WatchService
 
+    // No ScrollView here — the window wraps it in one. Kept out so the view has a
+    // real intrinsic height for the window to measure itself against.
     var body: some View {
-      ScrollView {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -147,8 +148,6 @@ struct SettingsView: View {
             .padding(.bottom, 4)
         }
         .background(Color(NSColor.windowBackgroundColor))
-      }
-      .frame(minWidth: 560, minHeight: 320)
     }
 }
 
@@ -161,6 +160,23 @@ final class SettingsWindowController {
 
     private var window: NSWindow?
 
+    // Left to NSHostingController, the window takes the content's *ideal* width —
+    // the chip row and the brew command push that past 1000pt and strand each
+    // toggle's switch a screen away from its label. This is what the preview row's
+    // columns actually need.
+    private static let contentWidth: CGFloat = 620
+
+    /// Height the settings content wants at `contentWidth`, clamped to the screen.
+    /// Measured rather than assumed: every constant tried here was either short
+    /// enough to crop the editor or tall enough to leave dead space beneath it.
+    private static func naturalHeight(of content: SettingsView) -> CGFloat {
+        let probe = NSHostingView(rootView: content.frame(width: contentWidth))
+        let measured = probe.fittingSize.height
+        let ceiling = (NSScreen.main?.visibleFrame.height ?? 900) - 80
+        guard measured > 100 else { return min(600, ceiling) }
+        return min(measured, ceiling)
+    }
+
     func show(watchService: WatchService) {
         if window == nil {
             let w = NSWindow(
@@ -170,14 +186,13 @@ final class SettingsWindowController {
                 defer: false
             )
             w.title = "PortBar Settings"
-            w.contentViewController = NSHostingController(
-                rootView: SettingsView(watchService: watchService)
-            )
-            // NSHostingController sizes the window to the content's *ideal* width,
-            // which the chip row and the one-line brew command push past 1000pt and
-            // leaves the toggles stranded either side of a lot of nothing. The
-            // content only needs enough room for the preview row's columns.
-            w.setContentSize(NSSize(width: 620, height: 600))
+            let content = SettingsView(watchService: watchService)
+            w.contentViewController = NSHostingController(rootView: ScrollView { content })
+            w.contentMinSize = NSSize(width: Self.contentWidth, height: 300)
+            w.setContentSize(NSSize(
+                width: Self.contentWidth,
+                height: Self.naturalHeight(of: content)
+            ))
             w.isReleasedWhenClosed = false   // reopened later; releasing would dangle
             w.center()
             window = w
