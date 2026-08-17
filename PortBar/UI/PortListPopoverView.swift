@@ -2,16 +2,8 @@ import SwiftUI
 import AppKit
 import UserNotifications
 
-// MARK: - Column widths (shared between header & rows so they align)
-private enum Col {
-    static let health: CGFloat   = 20   // dot
-    static let port: CGFloat     = 58   // :3000
-    // process: .infinity — grows when the panel is widened, so full paths show
-    static let type: CGFloat     = 90   // Next.js, Vite …
-    static let project: CGFloat  = 120  // project folder name
-    static let uptime: CGFloat   = 56   // 2h 4m
-    static let processMin: CGFloat = 90
-}
+// Column widths and alignment live in PortColumn — the header and the row both
+// iterate settings.columns so they can't drift apart.
 
 // MARK: - Root
 
@@ -19,7 +11,6 @@ struct PortListPopoverView: View {
     @ObservedObject var watchService: WatchService
     @ObservedObject private var settings = PortBarSettings.shared
     @ObservedObject private var updater = UpdateChecker.shared
-    @State private var showSettings = false
     @State private var searchText = ""
     @State private var dragBaseWidth: CGFloat?
     @State private var dragBaseHeight: CGFloat?
@@ -27,16 +18,25 @@ struct PortListPopoverView: View {
     var body: some View {
         VStack(spacing: 0) {
             toolbar
-            if showSettings { settingsPanel; Divider() }
-            Divider()
-            columnHeader
             Divider()
             portList
             Divider()
             footer
         }
-        .frame(width: min(settings.popoverWidth, settings.maxPopoverWidth))
+        // Never narrower than the columns need. A stored width from a smaller layout
+        // (or from before a column gained a gutter) would otherwise leave the rows
+        // overflowing, and SwiftUI centres that overflow — clipping the group-colour
+        // stripe and the health dot off the left edge, not just the right.
+        .frame(width: renderWidth, alignment: .leading)
         .background(Color(NSColor.windowBackgroundColor))
+    }
+
+
+    // The screen cap yields to the column minimum: a clipped row is worse than a
+    // popover that reaches a little further than the icon's share of the screen.
+    private var renderWidth: CGFloat {
+        let floor = settings.minPopoverWidth
+        return min(max(settings.popoverWidth, floor), max(settings.maxPopoverWidth, floor))
     }
 
     // MARK: Toolbar
@@ -99,12 +99,12 @@ struct PortListPopoverView: View {
             .buttonStyle(.plain)
 
             Button {
-                withAnimation(.easeInOut(duration: 0.15)) { showSettings.toggle() }
+                SettingsWindowController.shared.show(watchService: watchService)
             } label: {
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: showSettings ? "gearshape.fill" : "gearshape")
+                    Image(systemName: "gearshape")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(showSettings ? Color.accentColor : Color.secondary)
+                        .foregroundStyle(Color.secondary)
                     if updater.hasUpdate {
                         Circle()
                             .fill(Color.orange)
@@ -126,149 +126,18 @@ struct PortListPopoverView: View {
 
     // MARK: Settings panel
 
-    private var settingsPanel: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("SETTINGS")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 14)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Auto Watch")
-                        .font(.caption.weight(.medium))
-                    Text("Automatically refresh ports every 3s on launch")
-                        .font(.caption2)
-                        .foregroundStyle(Color.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $settings.autoWatch)
-                    .labelsHidden()
-                    .onChange(of: settings.autoWatch) { newValue in
-                        if newValue && !watchService.isWatching { watchService.startWatching() }
-                        else if !newValue && watchService.isWatching { watchService.stopWatching() }
-                    }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-
-            Divider().padding(.horizontal, 14)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Show Port Count")
-                        .font(.caption.weight(.medium))
-                    Text("Show the number next to ⚡ in the menu bar")
-                        .font(.caption2)
-                        .foregroundStyle(Color.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $settings.showCount)
-                    .labelsHidden()
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-
-            Divider().padding(.horizontal, 14)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Notify on New Port")
-                        .font(.caption.weight(.medium))
-                    Text("Banner when a new port opens while watching")
-                        .font(.caption2)
-                        .foregroundStyle(Color.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $settings.notifyOnNewPort)
-                    .labelsHidden()
-                    .onChange(of: settings.notifyOnNewPort) { on in
-                        if on {
-                            UNUserNotificationCenter.current()
-                                .requestAuthorization(options: [.alert, .sound]) { _, _ in }
-                        }
-                    }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-
-            Divider().padding(.horizontal, 14)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Show All Ports by Default")
-                        .font(.caption.weight(.medium))
-                    Text("Include system & tool processes on launch")
-                        .font(.caption2)
-                        .foregroundStyle(Color.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $settings.defaultShowAll)
-                    .labelsHidden()
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-
-            Divider().padding(.horizontal, 14)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Version")
-                        .font(.caption.weight(.medium))
-                    if updater.hasUpdate, let latest = updater.latestVersion {
-                        Text("v\(latest) available — run: brew update && brew upgrade --cask portbar")
-                            .font(.caption2)
-                            .foregroundStyle(Color.orange)
-                    } else {
-                        Text("Up to date")
-                            .font(.caption2)
-                            .foregroundStyle(Color.secondary)
-                    }
-                }
-                Spacer()
-                Text("v" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(Color.secondary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-            .padding(.bottom, 4)
-        }
-        .background(Color(NSColor.controlBackgroundColor))
-    }
 
     // MARK: Column header
 
     private var columnHeader: some View {
         HStack(spacing: 0) {
+            // Matches the row's group-color stripe so the columns line up.
             Color.clear.frame(width: 3, height: 1)
 
-            Text("H")
-                .frame(width: Col.health, alignment: .center)
-
-            Text("PORT")
-                .frame(width: Col.port, alignment: .center)
-
-            Text("PROCESS")
-                .frame(minWidth: Col.processMin, maxWidth: .infinity, alignment: .leading)
-
-            Text("TYPE")
-                .frame(width: Col.type, alignment: .leading)
-
-            Text("PROJECT")
-                .frame(width: Col.project, alignment: .leading)
-
-            Text("UPTIME")
-                .frame(width: Col.uptime, alignment: .trailing)
-                .padding(.trailing, 10)
-
-            Text("TOOLS")
-                .frame(width: 104, alignment: .center)
+            ForEach(settings.columns) { column in
+                Text(column.title)
+                    .portColumnFrame(column, alignment: column.headerAlignment)
+            }
         }
         .font(.caption.weight(.semibold))
         .foregroundStyle(Color.secondary)
@@ -337,10 +206,19 @@ struct PortListPopoverView: View {
                     .padding(40)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(orderedPorts) { entry in
-                            PortPopoverRow(entry: entry, groupColor: groupColor(for: entry), watchService: watchService)
-                            Divider().padding(.leading, 14)
+                    // The header is pinned *inside* the scroll view on purpose. Laid
+                    // out beside it, the header and the rows sat in two different
+                    // layout contexts: the scroller's gutter narrowed the rows but not
+                    // the header, the flexible PROCESS column absorbed the difference,
+                    // and every column after it drifted out of line.
+                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        Section {
+                            ForEach(orderedPorts) { entry in
+                                PortPopoverRow(entry: entry, groupColor: groupColor(for: entry), watchService: watchService)
+                                Divider().padding(.leading, 14)
+                            }
+                        } header: {
+                            columnHeader
                         }
                     }
                     .animation(.easeInOut(duration: 0.18), value: orderedPorts.map { $0.id })
@@ -387,7 +265,7 @@ struct PortListPopoverView: View {
                         dragBaseWidth = baseW
                         dragBaseHeight = baseH
                         settings.popoverWidth = (baseW + g.translation.width)
-                            .clamped(to: PortBarSettings.widthRange)
+                            .clamped(to: settings.effectiveWidthRange)
                         settings.popoverListHeight = (baseH + g.translation.height)
                             .clamped(to: PortBarSettings.heightRange)
                     }
@@ -411,6 +289,7 @@ struct PortPopoverRow: View {
     let entry: PortEntry
     let groupColor: Color?
     @ObservedObject var watchService: WatchService
+    @ObservedObject private var settings = PortBarSettings.shared
     @State private var hovered = false
     @State private var hoverProcess = false
     @State private var hoverProject = false
@@ -423,41 +302,54 @@ struct PortPopoverRow: View {
                 .fill(groupColor ?? .clear)
                 .frame(width: 3)
 
-            // H — health dot
+            ForEach(settings.columns) { column in
+                cell(for: column)
+                    .portColumnFrame(column, alignment: column.cellAlignment)
+            }
+        }
+        .padding(.leading, 14)
+        .padding(.trailing, 26)   // clear the scroll bar gutter so ✕ isn't covered
+        .padding(.vertical, 6)
+        .background(hovered ? Color(NSColor.selectedContentBackgroundColor).opacity(0.1) : Color.clear)
+        .onHover { hovered = $0 }
+        .animation(.easeOut(duration: 0.08), value: hovered)
+    }
+
+    // MARK: Cells
+
+    @ViewBuilder
+    private func cell(for column: PortColumn) -> some View {
+        switch column {
+        case .health:
             Circle()
                 .fill(healthColor)
                 .frame(width: 7, height: 7)
-                .frame(width: Col.health, alignment: .center)
 
-            // PORT
+        case .port:
             Text(":" + String(entry.port))
                 .font(.system(.body, design: .monospaced).weight(.semibold))
-                .frame(width: Col.port, alignment: .leading)
-                .padding(.leading, 8)
 
-            // PROCESS — full path; column grows with the panel width. Hover = tooltip.
+        case .process:
+            // Full path; column grows with the panel width. Hover = tooltip.
             Text(entry.processName)
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .frame(minWidth: Col.processMin, maxWidth: .infinity, alignment: .leading)
                 .onHover { hoverProcess = $0 }
                 .overlay(alignment: .topLeading) {
                     if hoverProcess { HoverPathBubble(text: entry.processName) }
                 }
 
-            // TYPE
+        case .type:
             Text(label)
                 .lineLimit(1)
-                .frame(width: Col.type, alignment: .leading)
 
-            // PROJECT
+        case .project:
             Text(entry.projectName ?? "—")
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .frame(width: Col.project, alignment: .leading)
                 .onHover { hoverProject = $0 }
                 .overlay(alignment: .topLeading) {
                     if hoverProject, let p = entry.projectPath ?? entry.projectName {
@@ -465,14 +357,43 @@ struct PortPopoverRow: View {
                     }
                 }
 
-            // UP
+        case .cpu:
+            // ps reports a decaying average over roughly the last minute, and a
+            // multi-threaded process can exceed 100 — clamp so the bar stays sane.
+            MetricBar(
+                fraction: entry.cpuPercent.map { min($0, 100) / 100 },
+                text: entry.cpuPercent.map { String(format: "%.1f%%", $0) },
+                tint: loadTint(entry.cpuPercent, warn: 50, alarm: 85)
+            )
+            .help("CPU — average over roughly the last minute")
+
+        case .memory:
+            // Bar tracks %MEM because RSS on its own has no sensible ceiling.
+            MetricBar(
+                fraction: entry.memoryPercent.map { min($0, 100) / 100 },
+                text: entry.memoryRSS.map(formatMemory),
+                tint: loadTint(entry.memoryPercent, warn: 5, alarm: 15)
+            )
+
+        case .memoryPercent:
+            MetricBar(
+                fraction: entry.memoryPercent.map { min($0, 100) / 100 },
+                text: entry.memoryPercent.map { String(format: "%.1f%%", $0) },
+                tint: loadTint(entry.memoryPercent, warn: 5, alarm: 15)
+            )
+
+        case .pid:
+            Text(String(entry.pid))
+                .foregroundStyle(.tertiary)
+                .font(.caption.monospacedDigit())
+                .textSelection(.enabled)
+
+        case .uptime:
             Text(formatUptime(entry.uptime))
                 .foregroundStyle(.tertiary)
                 .font(.caption.monospacedDigit())
-                .frame(width: Col.uptime, alignment: .trailing)
-                .padding(.trailing, 10)
 
-            // Actions
+        case .tools:
             HStack(spacing: 4) {
                 // LAN-exposure marker: other devices can reach this port.
                 if entry.bindScope == .exposed {
@@ -494,14 +415,7 @@ struct PortPopoverRow: View {
                     Task { await ProcessKiller.kill(entry: entry, watchService: watchService) }
                 }
             }
-            .frame(width: 104, alignment: .trailing)
         }
-        .padding(.leading, 14)
-        .padding(.trailing, 26)   // clear the scroll bar gutter so ✕ isn't covered
-        .padding(.vertical, 6)
-        .background(hovered ? Color(NSColor.selectedContentBackgroundColor).opacity(0.1) : Color.clear)
-        .onHover { hovered = $0 }
-        .animation(.easeOut(duration: 0.08), value: hovered)
     }
 
     // MARK: Helpers
@@ -526,6 +440,50 @@ struct PortPopoverRow: View {
     private func copyPort() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(":" + String(entry.port), forType: .string)
+    }
+
+    private func loadTint(_ value: Double?, warn: Double, alarm: Double) -> Color {
+        guard let value else { return .secondary }
+        if value >= alarm { return .red }
+        if value >= warn  { return .orange }
+        return .green
+    }
+}
+
+// MARK: - Metric bar
+
+// A number with its own scale behind it, so a busy port is visible while scanning
+// the list instead of requiring the reader to compare digits.
+struct MetricBar: View {
+    let fraction: Double?   // 0…1, nil when the metric doesn't apply (Docker rows)
+    let text: String?
+    let tint: Color
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            if let fraction {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.primary.opacity(0.06))
+                        Capsule()
+                            .fill(tint.opacity(0.30))
+                            // A live-but-idle process should still show a sliver.
+                            .frame(width: max(2, geo.size.width * fraction))
+                    }
+                }
+            }
+            Text(text ?? "—")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(text == nil ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.secondary))
+                .lineLimit(1)
+                .padding(.horizontal, 4)
+        }
+        .frame(height: 15)
+        // GeometryReader has no intrinsic width, so without this the ZStack collapses
+        // to the width of its Text and the bar renders narrower than its column —
+        // making each row's bar a different length and pulling the number off the
+        // header above it.
+        .frame(maxWidth: .infinity)
     }
 }
 

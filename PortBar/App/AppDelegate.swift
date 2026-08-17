@@ -6,6 +6,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     nonisolated(unsafe) private var statusBarController: StatusBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        SelfCheck.run()
+        #endif
         // NSApplicationDelegate is always called on the main thread
         MainActor.assumeIsolated {
             let watchService = WatchService()

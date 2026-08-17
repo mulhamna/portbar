@@ -58,4 +58,33 @@ struct PortEntry: Identifiable {
     let bindScope: BindScope
     let isDockerContainer: Bool
     let dockerContainerName: String?
+
+    // Resource usage, nil when it can't be attributed to this port. Docker rows are
+    // always nil: their pid is the shared Docker backend, so ps would report the sum
+    // of every container rather than this one.
+    // cpuPercent follows BSD ps semantics — a decaying average over roughly the last
+    // minute, not an instantaneous sample. Can exceed 100 on multi-threaded processes.
+    let cpuPercent: Double?
+    let memoryRSS: Int?        // kilobytes
+    let memoryPercent: Double?
+}
+
+// Pads a version to the three components semver calls for. MARKETING_VERSION is
+// stored as "3.0", which renders as a version that looks truncated next to a
+// release tagged "3.2.0". Anything after the numbers (a "-beta" suffix) is kept.
+func formatVersion(_ version: String) -> String {
+    let head = version.prefix { $0.isNumber || $0 == "." }
+    let suffix = version.dropFirst(head.count)
+    var parts = head.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
+    guard !parts.isEmpty, parts.allSatisfy({ !$0.isEmpty }) else { return version }
+    while parts.count < 3 { parts.append("0") }
+    return parts.joined(separator: ".") + suffix
+}
+
+// Human-readable RSS. ps reports kilobytes.
+func formatMemory(_ kilobytes: Int) -> String {
+    if kilobytes < 1024 { return "\(kilobytes) KB" }
+    let mb = Double(kilobytes) / 1024
+    if mb < 1024 { return String(format: "%.0f MB", mb) }
+    return String(format: "%.1f GB", mb / 1024)
 }
