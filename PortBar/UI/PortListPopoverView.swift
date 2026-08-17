@@ -23,10 +23,21 @@ struct PortListPopoverView: View {
             Divider()
             footer
         }
-        .frame(width: min(settings.popoverWidth, settings.maxPopoverWidth))
+        // Never narrower than the columns need. A stored width from a smaller layout
+        // (or from before a column gained a gutter) would otherwise leave the rows
+        // overflowing, and SwiftUI centres that overflow — clipping the group-colour
+        // stripe and the health dot off the left edge, not just the right.
+        .frame(width: renderWidth, alignment: .leading)
         .background(Color(NSColor.windowBackgroundColor))
     }
 
+
+    // The screen cap yields to the column minimum: a clipped row is worse than a
+    // popover that reaches a little further than the icon's share of the screen.
+    private var renderWidth: CGFloat {
+        let floor = settings.minPopoverWidth
+        return min(max(settings.popoverWidth, floor), max(settings.maxPopoverWidth, floor))
+    }
 
     // MARK: Toolbar
 
