@@ -90,9 +90,12 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    // Gutter kept outside the frame so header and cell stay aligned.
-    var trailingPadding: CGFloat { self == .uptime ? 10 : 0 }
-    var leadingPadding: CGFloat { self == .port ? 8 : 0 }
+    // Every column carries the same gutter, applied outside its frame so the header
+    // and the cell stay aligned. Uniform on purpose: columns are user-orderable, so a
+    // right-aligned one can end up beside a left-aligned one in any permutation, and
+    // without a gutter of its own their text runs together (MEM next to PROJECT read
+    // as "MEMPROJECT").
+    static let gutter: CGFloat = 6
 
     var headerAlignment: Alignment {
         switch self {
@@ -122,7 +125,7 @@ enum PortColumn: String, CaseIterable, Identifiable, Codable {
         case .fixed(let w):       base = w
         case .flexible(let m):    base = m
         }
-        return base + leadingPadding + trailingPadding
+        return base + Self.gutter * 2
     }
 
     // The layout shipped before columns were configurable — unchanged so existing
@@ -151,12 +154,10 @@ extension View {
         switch column.width {
         case .fixed(let w):
             self.frame(width: w, alignment: alignment)
-                .padding(.leading, column.leadingPadding)
-                .padding(.trailing, column.trailingPadding)
+                .padding(.horizontal, PortColumn.gutter)
         case .flexible(let m):
             self.frame(minWidth: m, maxWidth: .infinity, alignment: alignment)
-                .padding(.leading, column.leadingPadding)
-                .padding(.trailing, column.trailingPadding)
+                .padding(.horizontal, PortColumn.gutter)
         }
     }
 }
