@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.4.0](https://github.com/mulhamna/portbar/compare/v3.3.0...v3.4.0) (2026-08-21)
+
+
+### Features
+
+* add a right-click menu to the status bar icon ([b9891ae](https://github.com/mulhamna/portbar/commit/b9891aed3b0f5e63bc23e622049c70c4190fcd92))
+
+
+### Bug Fixes
+
+* give the popover the whole screen, not the icon's share ([98a98e2](https://github.com/mulhamna/portbar/commit/98a98e20ab0742e0f53df830e0bb8886354bf73c))
+* pop the right-click menu up directly ([9cfa588](https://github.com/mulhamna/portbar/commit/9cfa5883f8e20ac411b24c8f5a499b370c53fa14))
+
 ## [3.3.0](https://github.com/mulhamna/portbar/compare/v3.2.0...v3.3.0) (2026-08-17)
 
 
