@@ -26,6 +26,16 @@ final class PortBarSettings: ObservableObject {
     /// Resize bounds for the current column set.
     var effectiveWidthRange: ClosedRange<CGFloat> { minPopoverWidth...Self.widthRange.upperBound }
 
+    /// Width actually rendered: the user's preference, never narrower than the columns
+    /// need, never wider than the screen allows. The screen cap yields to the column
+    /// minimum — a clipped row is worse than a panel that reaches a little further.
+    /// Both the popover view and StatusBarController read this, so the frame AppKit
+    /// positions and the frame SwiftUI draws can't disagree.
+    var renderWidth: CGFloat {
+        let floor = minPopoverWidth
+        return min(max(popoverWidth, floor), max(maxPopoverWidth, floor))
+    }
+
     // Order and membership of the popover's columns.
     @Published var columns: [PortColumn] = PortColumn.sanitized(
         UserDefaults.standard.stringArray(forKey: "pb.columns")

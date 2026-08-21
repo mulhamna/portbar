@@ -71,17 +71,22 @@ class StatusBarController: NSObject, NSPopoverDelegate {
                 )
                 popover = p
             }
-            // Cap render width to what fits symmetrically under the icon so the
-            // center-anchored popover can't run off the right (or left) screen edge.
             if let win = sender.window {
                 let onScreen = win.convertToScreen(sender.convert(sender.bounds, to: nil))
                 let vf = (win.screen ?? NSScreen.main)?.visibleFrame ?? onScreen
-                let room = min(onScreen.midX - vf.minX, vf.maxX - onScreen.midX)
-                PortBarSettings.shared.maxPopoverWidth = max(480, room * 2 - 16)
+                // ponytail: NSPopover slides its own frame along the edge to stay on
+                // screen and keeps the arrow on the anchor, so the budget is the whole
+                // screen — not the symmetric room under the icon. Capping to room*2
+                // squeezed the panel to nothing whenever the icon sat off-centre.
+                PortBarSettings.shared.maxPopoverWidth = max(480, vf.width - 24)
                 // Everything below the icon, less a margin so the popover never
                 // reaches the bottom edge of the screen.
                 PortBarSettings.shared.maxPopoverHeight = max(360, onScreen.minY - vf.minY - 24)
             }
+            // Size the frame before showing: AppKit anchors from the current content
+            // size, and the SwiftUI relayout for the caps above lands a runloop later —
+            // so without this the first open is positioned from the previous size.
+            popover?.contentSize.width = PortBarSettings.shared.renderWidth
             popover?.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
             installDismissMonitors()
             Task { await watchService.refresh() }
