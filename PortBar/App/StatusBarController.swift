@@ -50,10 +50,60 @@ class StatusBarController: NSObject, NSPopoverDelegate {
     // MARK: - Rebuild
 
     private func rebuildUI() {
-        // Always use popover (flat list is the primary UI)
+        // Always use popover (flat list is the primary UI); the menu is attached
+        // only for the duration of a right-click, see showContextMenu.
         statusItem.menu = nil
         statusItem.button?.target = self
-        statusItem.button?.action = #selector(togglePopover(_:))
+        statusItem.button?.action = #selector(handleClick(_:))
+        statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+    }
+
+    @objc private func handleClick(_ sender: NSStatusBarButton) {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            showContextMenu(sender)
+        } else {
+            togglePopover(sender)
+        }
+    }
+
+    // MARK: - Right-click menu
+
+    private func showContextMenu(_ sender: NSStatusBarButton) {
+        popover?.close()
+        let menu = NSMenu()
+        menu.addItem(item(watchService.isWatching ? "Stop Watching" : "Start Watching",
+                          #selector(toggleWatch)))
+        menu.addItem(item("Refresh Now", #selector(refreshNow)))
+        menu.addItem(.separator())
+        menu.addItem(item("Settings…", #selector(openSettings), key: ","))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Quit PortBar",
+                                action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        // ponytail: a permanently attached menu would swallow the left click that
+        // opens the popover, so attach it just long enough for this one click.
+        statusItem.menu = menu
+        sender.performClick(nil)
+        statusItem.menu = nil
+    }
+
+    private func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
+        let i = NSMenuItem(title: title, action: action, keyEquivalent: key)
+        i.target = self
+        return i
+    }
+
+    @objc private func toggleWatch() {
+        if watchService.isWatching { watchService.stopWatching() } else { watchService.startWatching() }
+    }
+
+    @objc private func refreshNow() {
+        Task { await watchService.refresh() }
+    }
+
+    @objc private func openSettings() {
+        NSApp.activate(ignoringOtherApps: true)
+        SettingsWindowController.shared.show(watchService: watchService)
     }
 
     // MARK: - Popover (flat mode)
