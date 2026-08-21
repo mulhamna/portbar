@@ -50,8 +50,8 @@ class StatusBarController: NSObject, NSPopoverDelegate {
     // MARK: - Rebuild
 
     private func rebuildUI() {
-        // Always use popover (flat list is the primary UI); the menu is attached
-        // only for the duration of a right-click, see showContextMenu.
+        // Always use popover (flat list is the primary UI); right-click pops its own
+        // menu up, see showContextMenu.
         statusItem.menu = nil
         statusItem.button?.target = self
         statusItem.button?.action = #selector(handleClick(_:))
@@ -80,11 +80,9 @@ class StatusBarController: NSObject, NSPopoverDelegate {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit PortBar",
                                 action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-        // ponytail: a permanently attached menu would swallow the left click that
-        // opens the popover, so attach it just long enough for this one click.
-        statusItem.menu = menu
-        sender.performClick(nil)
-        statusItem.menu = nil
+        // ponytail: popped up directly rather than assigned to statusItem.menu — an
+        // attached menu would swallow the left click that opens the popover.
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.minY - 4), in: sender)
     }
 
     private func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
