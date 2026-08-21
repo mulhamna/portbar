@@ -50,10 +50,58 @@ class StatusBarController: NSObject, NSPopoverDelegate {
     // MARK: - Rebuild
 
     private func rebuildUI() {
-        // Always use popover (flat list is the primary UI)
+        // Always use popover (flat list is the primary UI); right-click pops its own
+        // menu up, see showContextMenu.
         statusItem.menu = nil
         statusItem.button?.target = self
-        statusItem.button?.action = #selector(togglePopover(_:))
+        statusItem.button?.action = #selector(handleClick(_:))
+        statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+    }
+
+    @objc private func handleClick(_ sender: NSStatusBarButton) {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            showContextMenu(sender)
+        } else {
+            togglePopover(sender)
+        }
+    }
+
+    // MARK: - Right-click menu
+
+    private func showContextMenu(_ sender: NSStatusBarButton) {
+        popover?.close()
+        let menu = NSMenu()
+        menu.addItem(item(watchService.isWatching ? "Stop Watching" : "Start Watching",
+                          #selector(toggleWatch)))
+        menu.addItem(item("Refresh Now", #selector(refreshNow)))
+        menu.addItem(.separator())
+        menu.addItem(item("Settings…", #selector(openSettings), key: ","))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Quit PortBar",
+                                action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        // ponytail: popped up directly rather than assigned to statusItem.menu — an
+        // attached menu would swallow the left click that opens the popover.
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.minY - 4), in: sender)
+    }
+
+    private func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
+        let i = NSMenuItem(title: title, action: action, keyEquivalent: key)
+        i.target = self
+        return i
+    }
+
+    @objc private func toggleWatch() {
+        if watchService.isWatching { watchService.stopWatching() } else { watchService.startWatching() }
+    }
+
+    @objc private func refreshNow() {
+        Task { await watchService.refresh() }
+    }
+
+    @objc private func openSettings() {
+        NSApp.activate(ignoringOtherApps: true)
+        SettingsWindowController.shared.show(watchService: watchService)
     }
 
     // MARK: - Popover (flat mode)
@@ -71,17 +119,22 @@ class StatusBarController: NSObject, NSPopoverDelegate {
                 )
                 popover = p
             }
-            // Cap render width to what fits symmetrically under the icon so the
-            // center-anchored popover can't run off the right (or left) screen edge.
             if let win = sender.window {
                 let onScreen = win.convertToScreen(sender.convert(sender.bounds, to: nil))
                 let vf = (win.screen ?? NSScreen.main)?.visibleFrame ?? onScreen
-                let room = min(onScreen.midX - vf.minX, vf.maxX - onScreen.midX)
-                PortBarSettings.shared.maxPopoverWidth = max(480, room * 2 - 16)
+                // ponytail: NSPopover slides its own frame along the edge to stay on
+                // screen and keeps the arrow on the anchor, so the budget is the whole
+                // screen — not the symmetric room under the icon. Capping to room*2
+                // squeezed the panel to nothing whenever the icon sat off-centre.
+                PortBarSettings.shared.maxPopoverWidth = max(480, vf.width - 24)
                 // Everything below the icon, less a margin so the popover never
                 // reaches the bottom edge of the screen.
                 PortBarSettings.shared.maxPopoverHeight = max(360, onScreen.minY - vf.minY - 24)
             }
+            // Size the frame before showing: AppKit anchors from the current content
+            // size, and the SwiftUI relayout for the caps above lands a runloop later —
+            // so without this the first open is positioned from the previous size.
+            popover?.contentSize.width = PortBarSettings.shared.renderWidth
             popover?.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
             installDismissMonitors()
             Task { await watchService.refresh() }
